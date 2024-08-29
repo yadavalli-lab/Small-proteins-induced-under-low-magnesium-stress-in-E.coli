@@ -1,0 +1,82 @@
+---
+title: "FigS12"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+#Install packages
+```{r}
+if (!requireNamespace("rentrez", quietly = TRUE))
+    install.packages("rentrez")
+library(rentrez)
+library(Biostrings)
+library(msa)
+```
+
+
+```{r}
+search_results <- entrez_search(db="protein", term="YoaI[Gene Name] AND gammaproteobacteria[Organism]", retmax=5000)
+
+search_results <- entrez_search(db = "protein", term = "YoaI[Gene Name] AND gammaproteobacteria[Organism]", 
+                                use_history = TRUE)
+sequences <- entrez_fetch(db = "protein", 
+                          web_history = search_results$web_history, 
+                          rettype = "fasta", 
+                          retmax = 2000)  # Adjust `retmax` based on how many sequences you want per batch
+
+```
+
+```{r}
+temp_file <- tempfile()
+writeLines(sequences, temp_file)
+
+# Read the sequences into a Biostrings object
+aa_sequences <- readAAStringSet(temp_file, format="fasta")
+
+# Extract headers
+headers <- names(aa_sequences)
+(unique(names(aa_sequences)))
+```
+
+```{r}
+cleaned_names <- na.omit(names(aa_sequences))
+cleaned_sequences <- aa_sequences[!is.na(names(aa_sequences))]
+
+# Get unique species names
+unique_species <- unique(cleaned_names)
+
+# Extract the first sequence for each unique species name
+unique_indices <- match(unique_species, cleaned_names)
+unique_sequences <- cleaned_sequences[unique_indices]
+
+# Print the filtered AAStringSet object
+filtered_sequences <- unique_sequences[width(unique_sequences) < 40]
+```
+
+
+```{r}
+# Perform the alignment
+yoaI_alignment <- msa(filtered_sequences, method = "ClustalW")
+# Optionally, visualize the alignment
+msaPrettyPrint(yoaI_alignment, output = "pdf", file = "/data2/sangeev/paper1/figures/Fig1/yoaI_alignment.pdf")
+```
+
+
+
+

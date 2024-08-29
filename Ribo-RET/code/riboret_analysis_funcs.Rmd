@@ -1,0 +1,129 @@
+---
+title: "Ribo-RET analysis functions and data processing"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+
+```{r}
+library(GenomicAlignments)
+library(rtracklayer)
+library(tidyverse)
+library(parallel)
+library(patchwork)
+library(ggridges)
+```
+
+### Function definitions
+
+A function that takes the path to a directory containing bams and reads them in, naming them with themselves in the process, i.e. `some/dir/to/sample1.bam` becomes `sample1` in the list of bams.
+```{r}
+parallel_read_bams <- function(dir.with.bams, ncores){
+  # find the bams
+  bam.locs <- dir(dir.with.bams, pattern = ".bam$", full.names = TRUE)
+  
+  # name the bams with themselves, but only the important part
+  bam.names <- sapply(bam.locs, function(bam){
+    str_split(bam, "/") %>% 
+    unlist() %>% 
+    tail(1) %>% 
+    str_remove(".bam")
+    })
+  
+  # set names
+  names(bam.locs) <- bam.names
+  
+  # read each bam in
+  return(mclapply(bam.locs, readGAlignments, use.names = TRUE, mc.cores = ncores))
+}
+```
+
+A function that takes a path to a gff, and removes the rRNA/tRNA reads from the bams read in by `parallel_read_bams`. contaminants is a vector of things that specify things you don't want, i.e. rRNA, tRNA, and gff_col is the column that those things are found in.
+```{r}
+remove_rtrna_reads <- function(bam.list, gff.loc, gff.col, contaminants){
+  # read in the gff
+  gff <- readGFFAsGRanges(gff.loc)
+  
+  # make a rtRNA gff
+  rtrna.gff <- gff[gff$type %in% contaminants]
+  
+  # determine possible threads
+  if (length(bam.list) > 4){
+    threads <- 4
+  } else {
+    threads <- length(bam.list)
+  }
+  
+  # for each bam, remove the rtRNA reads
+  mclapply(bam.list, function(bam){
+    # define the set of reads to remove from the BAM
+    reads.to.remove <- queryHits(findOverlaps(bam, rtrna.gff))
+   
+    #remove them
+    return(bam[-reads.to.remove])
+  }, mc.cores = threads)
+}
+```
+
+A function to tally reads at P sites and combine to a single df.
+```{r}
+tally_reads <- function(bam.data.clean2, offset)
+  mclapply(bam.data.clean2, function(bam){        # for each bam
+    bam %>% as_tibble() %>%                            
+      mutate(position = ifelse(strand == "+", end - offset, start + offset)) %>%
+      group_by(strand, qwidth, position) %>%            # for each end and read length
+      tally() %>%                          # count reads that occur there
+      ungroup() %>%                        #
+      mutate(rpm = n*1e6/sum(n))
+  }, mc.cores = 4) %>%                     #
+    bind_rows(.id = "sample") 
+tally_reads_0 <- tally_reads(bam.data.clean2, 0) # setting the p site offset to 0. 
+
+
+tally_reads_at_EPA <- function(bam.list, offset){
+  mclapply(bam.list, function(bam){        # for each bam
+    bam %>%                                #
+      as_tibble() %>%                      # convert to df
+      mutate(position = ifelse(strand == "+", end - offset, start + offset)) %>% # only both +,- strands
+      group_by(strand, qwidth, position) %>%     # for each end and read length
+      tally() %>%                          # count reads that occur there
+      ungroup() %>%
+      mutate(rpm = n*1e6/sum(n))
+  }, mc.cores = 4) %>%                     #
+    bind_rows(.id = "sample") # combine to one df
+}
+```
+
+Apply the functions
+# Load Bam data
+```{r}
+bam.data <- parallel_read_bams("/data2/sangeev/paper1/updated_June24/Ribo-RET/alignment/hisat2/output_dedup/", ncores = 10)
+bam.data2 <- remove_contam_reads(bam.data, gffLoc = "/data2/sangeev/paper1/updated_June24/Ribo-RET/gffs/GCF_000005845.2_ASM584v2_genomic.gff.gz", contaminants = c("rRNA", "tRNA"))
+```
+
+#tally the reads
+```{r}
+tally_reads <- tally_reads_at_EPA(bam.data2, 0) # setting the p site offset to 0. 
+
+tally_reads %>% group_by(sample) %>% tally(rpm) #this confirms that all the reads are normalized to 1mil
+
+write_csv(tally_reads, "/data2/sangeev/paper1/updated_June24/Ribo-RET/dataframe/tally_reads_offset0.csv") #save the file
+```
+

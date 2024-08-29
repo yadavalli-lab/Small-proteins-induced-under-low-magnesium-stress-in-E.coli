@@ -1,0 +1,117 @@
+---
+title: "Fig S6"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+install.packages("ggbeeswarm")
+library(ggbeeswarm)
+library(tidyverse)
+library(ggplot2)
+```
+
+###repeat cell volume may 2024
+```{r fig.width=10, fig.height=5}
+cell_volume <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/updated_cell_volume.csv")
+
+cell_volume <- cell_volume %>%
+  mutate(length.in.um = length * .11,
+         width.in.um = width * .11) %>%
+  dplyr::select(strain, length.in.um, width.in.um, phase) %>% 
+  mutate(volume.in.um = (pi/4)*(width.in.um^2)*(length.in.um-(length.in.um/3)))
+
+cell_volume <- cell_volume %>%
+  filter(strain!="phoQ") %>%
+  mutate(strain = str_replace(strain, "_stop", " (ATG→TAA)")) %>%
+   mutate(strain = str_replace(strain, "MG1655/pEB52", "Empty vector")) %>%
+  mutate(phase = str_replace(phase, "lag", "Lag phase")) %>%
+  mutate(phase = str_replace(phase, "exp", "Exponential phase")) 
+
+cell_volume %>% group_by(strain) %>% tally()
+```
+
+```{r}
+# Create a new column to categorize strains based on your criteria.
+cell_volume <- cell_volume %>%
+  mutate(Strain_Category = case_when(
+    strain == "Empty vector" ~ "Empty vector",
+    grepl("\\TAA", strain) ~ "proteins with TAA",
+    TRUE ~ "proteins without TAA"
+  ))
+
+color_palette_vol <- c("Empty vector" = "#636363", "proteins without TAA" = "#e34a33", "proteins with TAA" = "black")
+
+cell_volume$strain <- factor(cell_volume$strain, levels = c("MgtS", "MgtS (ATG→TAA)", "MgrB", "MgrB (ATG→TAA)", "PmrR", "PmrR (ATG→TAA)", "YkgS",  "YkgS (ATG→TAA)", "YoaI",  "YoaI (ATG→TAA)", "YmiA", "YmiA (ATG→TAA)", "DinQ", "DinQ (ATG→TAA)", "Empty vector"))
+
+cell_volume$phase <- factor(cell_volume$phase, levels = c("Lag phase", "Exponential phase"))
+
+
+ggplot(cell_volume, aes(x = strain, y = volume.in.um, colour = Strain_Category, fill = "white")) +
+  geom_violin(fill="white", position = position_dodge(width = 0.9), adjust = 1) +
+  #geom_sina()+
+  geom_quasirandom(method='tukeyDense', alpha=0.05, width = 0.4) +
+  facet_wrap(~phase, nrow=2)+ 
+  labs(x = NULL, y = expression(log[10]("Cell volume (fL)"))) +
+  scale_y_log10(limits = c(0.2, 40)) +
+  scale_fill_manual(values = "white") +  # Fill color for all boxes
+  scale_color_manual(values = color_palette_vol) +  # Outline colors
+  stat_summary(fun = mean, geom = "crossbar", size = 0.3, width= 0.3, color = "#2c7fb8") +
+  geom_signif(
+    comparisons = list(c("MgtS", "MgtS (ATG→TAA)"),
+                       c("PmrR", "PmrR (ATG→TAA)"),
+                       c("YkgS", "YkgS (ATG→TAA)"),
+                       c("YoaI", "YoaI (ATG→TAA)"),
+                       c("YmiA", "YmiA (ATG→TAA)"),
+                        c("MgrB", "MgrB (ATG→TAA)"),
+                       c("DinQ", "DinQ (ATG→TAA)")),
+    test = "t.test",
+    color="black",
+    textsize = 3,
+    map_signif_level = c("***" = 0.001, "**" = 0.01, "*" = 0.05, "****" = 0.0001, "ns"= 1)
+    ) +
+  theme(text = element_text(size = 15, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+  annotation_logticks(sides = "l") +
+  theme(legend.position = "none") +
+  annotation_logticks(sides = "l") + theme(
+  panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "gray80"), # Adjust major grid lines
+  panel.grid.minor = element_line(size = 0.25, linetype = 'solid', colour = "gray90"))
+
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/FigS6.png", width = 12, height =6 , units = "in", dpi = 600) #without the mean value text
+
+```
+
+#this is to show the total number of cells analyzed per sample, indicated by n in the paper.
+```{r}
+cell_volume %>% group_by(strain, Strain_Category, phase) %>% tally()
+```
+
+#this is showing the mean values.
+```{r}
+mean_values <- cell_volume %>%
+  group_by(strain, phase) %>% 
+  summarise(Mean = mean(volume.in.um), .groups = 'drop')
+mean_values
+```
+
+

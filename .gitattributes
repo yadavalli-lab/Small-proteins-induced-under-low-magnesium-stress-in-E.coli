@@ -1,0 +1,6 @@
+*.largefiletype filter=lfs diff=lfs merge=lfs -text
+Ribo-RET/seqdata/* filter=lfs diff=lfs merge=lfs -text
+Ribo-RET/alignment/hisat2/output* filter=lfs diff=lfs merge=lfs -text
+RNA-Seq/alignment/kallisto/output filter=lfs diff=lfs merge=lfs -text
+RNA-Seq/30-669514637/* filter=lfs diff=lfs merge=lfs -text
+RNA-Seq/seqdata/* filter=lfs diff=lfs merge=lfs -text

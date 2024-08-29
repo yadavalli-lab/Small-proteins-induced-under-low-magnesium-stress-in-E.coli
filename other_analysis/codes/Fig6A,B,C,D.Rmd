@@ -1,0 +1,194 @@
+---
+title: "Fig 6"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+#Fig6A
+```{r}
+#upload the data
+del_pmrR_yobF <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/yobF_pmrR.csv")
+```
+
+#Fig 6A
+```{r}
+#we wil plot PmrR complementation first
+
+pmrR_comp <- del_pmrR_yobF %>%
+  filter(protein=="pmrR") 
+
+#parse through and rearrange the data
+pmrR_comp$wild_type <- factor(pmrR_comp$wild_type, levels= c("wild_type",  "mutant"), labels = c("Wild type", "∆pmrR"))
+pmrR_comp$strain <- factor(pmrR_comp$strain, levels= c("small_protein",  "empty_vector", "stop"), labels = c("pPmrR", "pEmpty vector", "pPmrR (ATG → TAA)"))
+pmrR_comp$stress <- factor(pmrR_comp$stress, levels= c("stress",  "no_stress"), labels = c("Low Mg²⁺", "No stress"))
+
+pmrR_comp %>%
+   group_by(time, strain, wild_type, stress) %>% 
+  summarise(mean.val = mean(OD), sem.val = sd(OD) / sqrt(n())) %>% 
+  ungroup() %>%
+  ggplot(aes(x = time, y = mean.val, color = strain, linetype=wild_type)) +
+  geom_point(size = 0.5) +
+  geom_line() +  
+   geom_errorbar(aes(ymin = mean.val - sem.val, ymax = mean.val + sem.val), 
+                width = 0.4, size= 0.4, linetype= "solid", position = position_dodge(0.3)) +
+  facet_grid(stress~.) +
+  scale_x_continuous(breaks = seq(0, 20, 2)) +
+  scale_y_continuous(trans = "log2") +
+  scale_color_manual(values = c("#de2d26", "#636363", "black"),
+                     labels = c("ΔpmrR/pPmrR", "ΔpmrR/pEmpty vector", "ΔpmrR/pPmrR (ATG→TAA)")) +
+  scale_linetype_manual(values = c("dotted", "solid"),
+                        labels = c("Wild-type/pEmpty vector", "ΔpmrR/pEmpty vector")) +
+  labs(x = "Time (Hours)", y = expression(log[2]("OD"[600]) * ("a.u.")),
+       color = NULL) +
+ theme(text = element_text(size = 13, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+  annotation_logticks(sides = "l") +
+  theme(legend.position = "bottom")+
+  guides(color = guide_legend(ncol = 1), linetype = guide_legend(ncol = 1, title = NULL)) 
+  
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig6A.png", width = 4, height = 4, units = "in", dpi = 600)
+```
+
+#Fig 6B
+```{r}
+#we wil plot YobF complementation 
+
+yobF_comp <- del_pmrR_yobF %>%
+  filter(protein=="yobF") 
+
+#parse through and rearrange the data
+yobF_comp$wild_type <- factor(yobF_comp$wild_type, levels= c("wild_type",  "mutant"), labels = c("Wild type", "∆yobF"))
+yobF_comp$strain <- factor(yobF_comp$strain, levels= c("small_protein",  "empty_vector", "stop"), labels = c("pYobF", "pEmpty vector", "pYobF (ATG → TAA)"))
+yobF_comp$stress <- factor(yobF_comp$stress, levels= c("stress",  "no_stress"), labels = c("Low Mg²⁺", "No stress"))
+
+yobF_comp %>%
+   group_by(time, strain, wild_type, stress) %>% 
+  summarise(mean.val = mean(OD), sem.val = sd(OD) / sqrt(n())) %>% 
+  ungroup() %>%
+  ggplot(aes(x = time, y = mean.val, color = strain, linetype=wild_type)) +
+  geom_point(size = 0.5) +
+  geom_line() +  
+   geom_errorbar(aes(ymin = mean.val - sem.val, ymax = mean.val + sem.val), 
+                width = 0.4, size= 0.4, linetype= "solid", position = position_dodge(0.3)) +
+  facet_grid(stress~.) +
+  scale_x_continuous(breaks = seq(0, 20, 2)) +
+  scale_y_continuous(trans = "log2") +
+  scale_color_manual(values = c("#de2d26", "#636363", "black"),
+                     labels = c("ΔyobF/pYobF", "ΔyobF/pEmpty vector", "ΔyobF/pYobF (ATG→TAA)")) +
+  scale_linetype_manual(values = c("dotted", "solid"),
+                        labels = c("Wild-type/pEmpty vector", "ΔyobF/pEmpty vector")) +
+  labs(x = "Time (Hours)", y = expression(log[2]("OD"[600]) * ("a.u.")),
+       color = NULL) +
+ theme(text = element_text(size = 13, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+  annotation_logticks(sides = "l") +
+  theme(legend.position = "bottom")+
+  guides(color = guide_legend(ncol = 1), linetype = guide_legend(ncol = 1, title = NULL)) 
+  
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig6B.png", width = 4, height = 4, units = "in", dpi = 600)
+```
+#Fig6C
+```{r}
+yriAB_del_final <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/yriAB_del_no_comp_repeat.csv")
+
+#excluding the synonymous mutation data
+yriAB_del_final <- yriAB_del_final %>%
+  filter(!strain=="yriB(yriA_syn_mut)")
+
+yriAB_del_final$wild_type <- factor(yriAB_del_final$wild_type, levels= c("yes",  "no"), labels = c("Wild type", "∆yriAB"))
+yriAB_del_final$stress <- factor(yriAB_del_final$stress, levels= c("stress",  "no_stress"), labels = c("Low Mg²⁺", "No stress"))
+yriAB_del_final$strain <- factor(yriAB_del_final$strain, levels= c("Empty_vector", "yriAB", "yriA", "yriB", "yriB(yriA_TAA)"), labels = c("pEmpty vector", "pYriAB", "pYriA", "pYriB", "pYriB (YriA [ATG → TAA])"))
+
+#"#de2d26"
+yriAB_del_final %>%
+  group_by(hour, strain, wild_type,stress) %>% 
+  summarise(mean.val = mean(OD), sem.val = sd(OD) / sqrt(n()), .groups = "drop") %>%
+  ggplot(aes(x = hour, y = mean.val, color = strain, linetype = wild_type)) +
+  geom_point(size = 0.5) +
+  geom_line() +  
+  geom_errorbar(aes(ymin = mean.val - sem.val, ymax = mean.val + sem.val), 
+                width = 0.4, size= 0.4, linetype = "solid", position = position_dodge(0.3)) +
+  scale_x_continuous(breaks = seq(0, 20, 2)) +
+  scale_y_continuous(trans = "log2") +
+  scale_color_manual(values = c("#636363", "#de2d26", "#3182bd", "#c994c7", "#756bb1"), 
+                    labels = c("ΔyriAB/pEmpty vector", "ΔyriAB/pYriAB", "ΔyriAB/pYriA", "ΔyriAB/pYriB", "ΔyriAB/pYriB (YriA [ATG → TAA])")) +
+ scale_linetype_manual(values = c("dotted", "solid"),
+                        labels = c("Wild-type/pEmpty vector", "ΔyriAB/pEmpty vector")) +
+  labs(x = "Time (Hours)", y = expression(log[2]("OD"[600]) * ("a.u.")),
+       color = NULL) +
+  facet_wrap(~stress, ncol =1, strip.position = "right" )+
+   theme(text = element_text(size = 13, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+  annotation_logticks(sides = "l") +
+  theme(legend.position = "bottom")+
+  guides(color = guide_legend(ncol = 1), linetype = guide_legend(ncol = 1, title = NULL)) 
+  
+  
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig6C.png", width = 4, height = 5, units = "in", dpi = 600)
+```
+#Fig6D
+```{r}
+yqhI_repeat <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/yqhI_repeat.csv")
+
+yqhI_repeat$wt <- factor(yqhI_repeat$wt, levels = c("yes", "no"), labels = c("Wild type", "∆yqhI"))
+yqhI_repeat$vector <- factor(yqhI_repeat$vector, levels = c("empty", "small"), labels = c("pEmpty vector", "pYqhI"))
+
+yqhI_repeat%>% 
+ group_by(hour, vector, wt) %>% 
+  summarise(mean.val = mean(OD), sem.val = sd(OD) / sqrt(n())) %>% 
+  ungroup() %>%
+  ggplot(aes(x = hour, y = mean.val, color = vector, linetype=wt)) +
+  geom_point(size = 0.5) +
+  geom_line() +  
+   geom_errorbar(aes(ymin = mean.val - sem.val, ymax = mean.val + sem.val), 
+                width = 0.4, size= 0.4, linetype= "solid", position = position_dodge(0.3)) +
+  scale_x_continuous(breaks = seq(0, 20, 2)) +
+  scale_y_continuous(trans = "log2") +
+  scale_color_manual(values = c( "#636363", "#de2d26"), 
+                    labels = c("ΔyqhI/pEmpty vector", "ΔyqhI/pYqhI")) +
+ scale_linetype_manual(values = c("dotted", "solid"),
+                        labels = c("Wild-type/pEmpty vector", "ΔyqhI/pEmpty vector")) +
+  labs(x = "Time (Hours)", y = expression(log[2]("OD"[600]) * ("a.u.")),
+       color = NULL) +
+   theme(text = element_text(size = 13, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+  annotation_logticks(sides = "l") +
+  theme(legend.position = "bottom")+
+  guides(color = guide_legend(ncol = 1), linetype = guide_legend(ncol = 1, title = NULL)) 
+  
+
+
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig6D.png", width = 3.5, height = 3, units = "in", dpi = 600)
+
+```
+

@@ -1,0 +1,100 @@
+---
+title: "Fig S11B"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+**Depends on functions loaded from /data2/sangeev/paper1/updated_June24/Ribo-RET/code/riboret_analysis_functions.Rmd**
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+library(tidyverse)
+library(GenomicAlignments)
+library(ggplot2)
+library(GenomicAlignments)
+library(parallel)
+library(RiboRet)
+library(ggpubr)
+```
+
+```{r}
+#load the data
+tally_reads <- read_csv("/data2/sangeev/paper1/updated_June24/Ribo-RET/dataframe/tally_reads_offset0.csv")
+```
+
+```{r}
+#load gff
+gff <- readGFF("/data2/sangeev/paper1/updated_June24/Ribo-RET/gffs/GCF_000005845.2_ASM584v2_genomic.gff.gz")
+gff <- gff %>% 
+  as_tibble() %>%
+  filter(type == "CDS") %>%
+  dplyr::select(start, end, strand, gene)
+
+gff
+```
+
+#create a function to plot reads mapping to specific position. 
+```{r}
+fac.labels <- c("wt_ns" = "No stress",
+                "wt_mg" = "Low magnesium")
+
+tally_reads$sample <- factor(tally_reads$sample, levels= c("wt_ns",  "wt_mg"))
+
+
+plot_gene <- function(reads.table, gene, pad, intern = 30){
+  low <- ifelse(gene$strand == "+", gene$start - pad, gene$end - intern)
+  high <- ifelse(gene$strand == "+", gene$start + intern, gene$end + pad)
+reads.table %>% 
+    filter(position >= low, position <= high, strand == gene$strand) %>%
+    ggplot(., aes(x = position, y = rpm, fill=sample)) +
+    geom_bar(stat = "identity") +
+    theme_classic()+
+    theme(text = element_text(size = 12),
+        panel.grid = element_blank(),
+        legend.position="none")+
+   facet_wrap(~ sample, ncol = 1, labeller = labeller(sample = fac.labels)) +
+  scale_fill_manual(values = c("#636363", "#de2d26"))+
+    geom_vline(xintercept = ifelse(gene$strand == "+", gene$start, gene$end), col = "#8856a7", alpha = 1, linetype = 2) +
+   labs(y = "Reads per million (RPM)", x = "Position on the genome") 
+
+}
+
+function(reads.table, gene, pad, intern = 30){
+  low <- ifelse(gene$strand == "+", gene$start - pad, gene$end - intern)
+  high <- ifelse(gene$strand == "+", gene$start + intern, gene$end + pad)
+
+  reads.table %>% 
+    filter(position >= low, position <= high, strand == gene$strand) %>%
+    ggplot(., aes(x = position, y = rpm)) +
+    geom_bar(stat = "identity") +
+    facet_grid(sample~., scales = "free_y") +
+    geom_vline(xintercept = ifelse(gene$strand == "+", gene$start, gene$end), col = "red", alpha = 0.2)
+}
+#these colors are color-blind, print, and photocopy friendly. 
+```
+
+
+#Figure S11B
+```{r}
+plot_gene(tally_reads, gene = gff %>% filter(gene == "hfq"), pad = 0, intern = 100)
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS11B.png", dpi = 600, width = 4, height = 3)
+```
+
+
+

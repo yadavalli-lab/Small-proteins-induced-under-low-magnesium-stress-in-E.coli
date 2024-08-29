@@ -1,0 +1,127 @@
+---
+title: "Fig 2"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+library(clusterProfiler)
+library(tidyverse)
+library(ggplot2)
+library(ggrepel)
+```
+
+```{r}
+#load the data
+diff_exp_tibble <- read_csv("/data2/sangeev/paper1/updated_June24/RNA-Seq/dataframe/RNA_seq_differentially_regulated.csv")
+```
+
+```{r}
+#set the differential expression cut off and criteria
+new_diff_exp_tibble_3 <- diff_exp_tibble %>%
+ mutate(new_y = -log10(pvalue),
+         new_pval = ifelse(new_y > 10, 10, new_y),
+         color = ifelse(new_pval > -log10(0.05) & abs(log2FoldChange) >= 1, 
+                        ifelse(log2FoldChange >= 1, "Upregulated", ifelse(log2FoldChange <= -1, "Downregulated", "Not Significant")), 
+                        "Not Significant")) %>%
+  mutate(color = replace_na(color, "Not Significant")) %>%
+  mutate(new_pval= replace_na(new_pval, 0)) %>%
+  mutate(log2FoldChange= replace_na(log2FoldChange, 0)) 
+```
+```{r fig.height=6, fig.width=3}
+new_diff_exp_tibble2 <- diff_exp_tibble %>%
+  mutate(new_y = -log10(pvalue),
+         new_pval = ifelse(new_y > 100, 100, new_y),
+         color= new_pval > -log10(0.05) & abs(log2FoldChange)>=1)
+
+new_diff_exp_tibble2%>%
+  ggplot(., aes(x=log2FoldChange, y= new_pval, col=color)) + #significant and large change...
+  geom_point() +
+  ggrepel::geom_label_repel(data = . %>% filter(gene %in% c("mgrB", "mgtS", "mgtT", "yriA", "ydgU","yobF", "yddY", "ymiA", "yadX", "ymiC", "yadW", "yqhI", "dinQ", "yoaI", "pmrR", "yriB",  "ykgS")), aes(x=log2FoldChange, y= new_pval, label = gene), inherit.aes = F, arrow = arrow(length = unit(0.02, "npc"), 
+                             type = "closed", ends = "last"),
+                             nudge_y = 3,
+                             segment.size  = 0.3) +
+  coord_flip()
+
+```
+```{r}
+new_diff_exp_tibble <- diff_exp_tibble %>%
+ mutate(new_y = -log10(pvalue),
+         new_pval = ifelse(new_y > 10, 10, new_y),
+         color = ifelse(new_pval > -log10(0.05) & abs(log2FoldChange) >= 1, 
+                        ifelse(log2FoldChange >= 1, "Upregulated", ifelse(log2FoldChange <= -1, "Downregulated", "Not Significant")), 
+                        "Not Significant")) %>%
+  mutate(color = replace_na(color, "Not Significant")) %>%
+  mutate(new_pval= replace_na(new_pval, 0)) %>%
+  mutate(log2FoldChange= replace_na(log2FoldChange, 0)) 
+```
+
+
+```{r}
+selected <- c("mgrB", "mgtS", "mgtT", "yriA", "ydgU","yobF", "yddY", "ymiA", "yadX", "ymiC", "yadW", "yqhI", "dinQ", "yoaI", "pmrR", "yriB",  "ykgS")
+```
+
+
+```{r fig.width=8, fig.height=5}
+new_diff_exp_tibble %>%
+  filter(!is.na(new_pval) & !is.na(log2FoldChange) & !is.na(color)) %>%
+  ggplot(aes(x=log2FoldChange, y= new_pval, color=color)) + 
+  geom_point(size=1, alpha=0.8) +
+  ggrepel::geom_label_repel(data = . %>% filter(gene %in% selected), 
+                            aes(x=log2FoldChange, y= new_pval, label = gene, fontface = "italic", size=6), 
+                            show.legend = FALSE,
+                            box.padding = 0.45, point.padding = 0.4,
+                            segment.color = 'grey50', segment.alpha = 1,
+                            arrow = arrow(length = unit(0.02, 'npc'), type = 'closed'),
+                            force = 25) +
+  scale_color_manual(values = c("#1F78B4", "#636363", "#FF0000")) + 
+  theme_classic() +
+  theme(text = element_text(size = 20),
+        legend.position = c(2, 0),  # Adjust the position here
+        legend.justification = c(2, 0),  # Adjust the justification here
+        legend.box.just = "right",
+        legend.text = element_text(size = 16), 
+        legend.title = element_text(size = 16),
+        legend.background = element_rect(size = 0.5),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.background = element_blank(),
+        axis.line = element_line(colour = "black", size = 0.5),
+        axis.ticks = element_line(colour = "black", size = 0.5),
+        axis.title.x = element_text(vjust = -0.5, size = 20),
+        axis.title.y = element_text(vjust = 1.5, size = 20),
+        axis.text = element_text(size = 16)) +
+  labs(x = expression(log[2]~'Fold Change'), y = expression(-log[10]~'P-value'),
+       color = 'Significance') +
+  guides(color = guide_legend(title = NULL,
+                               override.aes = list(shape=c(21, 19, 19), 
+                                                   fill=c("#fc9272", "#000000", "#FF0000"),
+                                                   size=1,
+                                                   alpha=0.8,
+                                                   stroke = 1.5))) +
+  theme(legend.key.size = unit(1.2, "cm")) +
+  theme(legend.spacing = unit(0.25, "cm"))
+
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/lowmg_rnaseq_significant score.png", dpi = 600, width = 8, height = 5)
+
+```
+
+
+

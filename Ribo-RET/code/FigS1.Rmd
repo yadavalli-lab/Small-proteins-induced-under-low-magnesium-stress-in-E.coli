@@ -1,0 +1,157 @@
+---
+title: "read length and offsite comparison"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+**Depends on functions loaded from /data2/sangeev/paper1/updated_June24/Ribo-RET/code/riboret_analysis_functions.Rmd**
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+```{r}
+library(RiboRet)
+library(tidyverse)
+library(rtracklayer)
+library(parallel)
+library(GenomicAlignments)
+library(patchwork)
+
+gff <- readGFFAsGRanges("/data2/sangeev/paper1/updated_June24/Ribo-RET/gffs/GCF_000005845.2_ASM584v2_genomic.gff.gz")
+```
+
+# Load Bam data
+```{r}
+bam.locs <- dir("/data2/sangeev/paper1/updated_June24/Ribo-RET/alignment/hisat2/output2/", recursive = TRUE, pattern = ".bam", full.names = TRUE)
+
+# Exclude .bai files
+bam.locs <- bam.locs[!grepl("\\.bai$", bam.locs)]
+
+names(bam.locs) <- lapply(bam.locs, function(x){
+  str_split(x, "/") %>% 
+    unlist() %>% 
+    tail(1)
+}) %>% 
+  unlist()
+
+bam.list <- mclapply(bam.locs, readGAlignments, mc.cores = length(bam.locs))
+```
+# Remove rRNAs and tRNAs
+```{r}
+bam.data.clean <- remove_contam_reads(bam.list, gffLoc = "/data2/sangeev/paper1/updated_June24/Ribo-RET/gffs/GCF_000005845.2_ASM584v2_genomic.gff.gz", contaminants = c("rRNA", "tRNA"))
+```
+
+Tally the reads across different samples by setting the offset as 0. using only + strand
+```{r}
+tally_reads_at_EPA <- function(bam.list, offset){
+  mclapply(bam.list, function(bam){        # for each bam
+    bam %>%                                #
+      as_tibble() %>%                      # convert to df
+       mutate(position = ifelse(strand == "+", end - offset, start + offset)) %>%
+      group_by(strand, qwidth, position) %>%            # for each end and read length
+      tally() %>%                          # count reads that occur there
+      ungroup() %>%                        #
+      mutate(rpm = n*1e6/sum(n))
+  }, mc.cores = 4) %>%                     #
+    bind_rows(.id = "sample")              # combine to one df
+}
+
+tally_reads_no_offset <- tally_reads_at_EPA(bam.data.clean, 0)
+```
+### Map reads to genes
+
+Create a CDS only gff and add a new column to it that is simply the row number. 
+```{r}
+cds.gff <- gff[gff$type == "CDS"]
+
+cds.gff <- cds.gff[!(duplicated(cds.gff$gene))]
+
+cds.gff$index <- 1:length(cds.gff)
+```
+
+This is a metagene ribogrid.
+```{r fig.width = 10, fig.height = 6}
+gene.names <- gff[gff$type == "CDS"]$gene
+
+# name that vector with itself
+names(gene.names) <- gene.names 
+
+# this function gets all reads for a gene and aligns genes by their start codons
+# i.e. says a read is x bases from the start
+gene_pos <- function(gene, start_pad, end_pad){
+  tally_reads_no_offset %>%
+    filter(position >= start(cds.gff[cds.gff$gene == gene]) - start_pad &
+             position <= end(cds.gff[cds.gff$gene == gene]) + end_pad) %>%
+    mutate(rel_pos = position - start(cds.gff[cds.gff$gene == gene]) + 1)
+}
+
+# apply said function to all genes
+aligned_reads <- mclapply(gene.names, gene_pos, start_pad = 20, end_pad = 20, mc.cores = 32) %>% 
+  bind_rows(.id = "gene") 
+
+
+write_csv(aligned_reads, "/data2/sangeev/paper1/updated_June24/Ribo-RET/dataframe/tally_reads_for_read_length_offsite.csv")
+
+
+# bind to a single df and total reads to positions,
+# then normalize reads
+aligned_reads2 <- aligned_reads %>% 
+  group_by(rel_pos, sample, qwidth) %>% 
+  summarise(total_reads = sum(n)) %>% 
+  ungroup() %>% 
+  group_by(sample) %>% 
+  mutate(normalized_reads = total_reads * 1e6 / sum(total_reads)) %>% 
+  ungroup()
+ 
+aligned_reads2 %>% group_by(sample) %>% tally()
+```
+
+```{r fig.width = 8, fig.height = 4}
+aligned_reads2$sample <- factor(aligned_reads2$sample, levels= c("wt_ns.bam",  "wt_mg.bam"))
+fac.labels2 <- c("wt_ns.bam" = "No stress",
+                "wt_mg.bam" = "Magnesium stress")
+
+aligned_reads2 %>% 
+  ggplot(., aes(rel_pos, qwidth, fill = normalized_reads))+
+  geom_tile()+
+  scale_x_continuous(limits = c(-10, 30), breaks = c(-10,-5,0,5,10,15,20,25,30))+
+  scale_fill_viridis_c(option = "B") +
+  labs(x = "Position from start codon",
+       y = "Read Length") +
+  theme_bw() +
+    theme(text = element_text(size = 13),
+          panel.grid = element_blank()) +
+  facet_wrap( ~ sample, ncol = 2, scales = "free", labeller = as_labeller(fac.labels2))
+
+```
+
+```{r fig.width = 6, fig.height = 2}
+aligned_reads2 %>%
+ ggplot(., aes(rel_pos, qwidth, fill = normalized_reads))+
+  geom_tile()+
+  scale_x_continuous(limits = c(-10, 30), breaks = c(-10,-5,0,5,10,15,20,25,30))+
+               scale_fill_viridis_c(option = "D") +
+                 theme(text = element_text(size = 13, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"))+
+  labs(x = "Position from start codon",
+       y = "Read Length") +
+  facet_wrap( ~ sample, ncol = 2, scales = "free", labeller = as_labeller(fac.labels2))
+  #theme(legend.position = "bottom")
+
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/S1.png", units = "in", dpi = 600, width = 8, height =3)
+```
+

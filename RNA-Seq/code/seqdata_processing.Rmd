@@ -1,0 +1,112 @@
+---
+title: "Sequencing data processing"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+###Do FASTP, remove the adapters and check the quality of the reads. 
+```{bash}
+# create an array of unique files names
+ARRAY=$(
+for FILE in ../seqdata/1-original/*.gz; do
+  # get the file name sans path
+  PARTS=`basename $FILE`
+  
+  # remove the part that denotes the pair
+  PARTS=${PARTS//_R[12]_001.fastq.gz/}
+  
+  # print and push only unique elements to the array
+  echo $PARTS
+done | sort -u
+)
+
+# run fastp
+for I in ${ARRAY[@]}; do
+  # define the pairs
+  PAIR1=../seqdata/1-original/$I\_R1_001.fastq.gz
+  PAIR2=../seqdata/1-original/$I\_R2_001.fastq.gz
+  
+  # define the outputs
+  OUT1=../seqdata/2-cleaned/$I\_R1_001.fastq.gz
+  OUT2=../seqdata/2-cleaned/$I\_R2_001.fastq.gz
+  
+  # reports files
+  JSON=../reports/$I/fastp.json
+  HTML=../reports/$I/fastp.html
+  
+  # place to put the reports
+  mkdir -p ../reports/$I
+  
+  # adapters
+  A1=AGATCGGAAGAGCACACGTCTGAACTCCAGTCA
+  A2=AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+  
+  fastp --adapter_sequence $A1 --adapter_sequence_r2 $A2 -i $PAIR1 -I $PAIR2 -o $OUT1 -O $OUT2 -w 4 -j $JSON -h $HTML -R $I &
+done
+```
+
+```{bash}
+#create indices
+kallisto index -i ../ecoli_genes_k31.kallisto ../ecoli_genes.fasta 
+```
+
+### Transcriptome alignment 
+```{bash}
+# create an array of unique files names
+ARRAY=$(
+for FILE in ../seqdata/2-cleaned/*.gz; do
+  # get the file name sans path
+  PARTS=`basename $FILE`
+  
+  # remove the part that denotes the pair
+  PARTS=${PARTS//_R[12]_001.fastq.gz/}
+  
+  # print and push only unique elements to the array
+  echo $PARTS
+done | sort -u
+)
+
+# batches of 8 processes
+N=8
+(
+# for each sample name
+for I in ${ARRAY[@]}; do
+  ((i=i%N)); ((i++==0)) && wait
+  
+  # make the output directory, one per pair
+  OUTPUT=../alignment/kallisto/output/$I
+  
+  mkdir -p $OUTPUT
+  
+  # define the read pairs
+  PAIR1=../seqdata/2-cleaned/$I\_1.fq.gz
+  PAIR2=../seqdata/2-cleaned/$I\_2.fq.gz
+  
+  # denote the index
+  INDEX=../alignment/kallisto/indices/ecoli_genes_k31.kallisto
+  
+  # report location
+  REPORT=../reports/$I/kallisto.txt
+  
+  # align
+  kallisto quant -i $INDEX -o $OUTPUT -t 4 $PAIR1 $PAIR2 2>$REPORT &
+done
+)
+```
+

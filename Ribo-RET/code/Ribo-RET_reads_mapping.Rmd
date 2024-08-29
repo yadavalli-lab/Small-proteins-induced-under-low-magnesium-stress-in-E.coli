@@ -1,0 +1,112 @@
+---
+title: "Ribo-RET reads mapping"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+**Depends on functions loaded from /data2/sangeev/paper1/updated_June24/Ribo-RET/code/riboret_analysis_functions.Rmd**
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+library(tidyverse)
+library(rtracklayer)
+library(parallel)
+library(GenomicAlignments)
+library(patchwork)
+library(ggplot2)
+library(GenomicAlignments)
+library(parallel)
+library(RiboRet)
+library(ggpubr)
+```
+
+# Load Bam data
+```{r}
+bam.data <- parallel_read_bams("/data2/sangeev/paper1/updated_June24/Ribo-RET/alignment/hisat2/output_dedup/", ncores = 10) #deduplicated reads
+bam.data.clean <- remove_contam_reads(bam.data, gffLoc = "/data2/sangeev/paper1/updated_June24/Ribo-RET/gffs/GCF_000005845.2_ASM584v2_genomic.gff.gz", contaminants = c("rRNA", "tRNA"))
+```
+# tally reads with offset set to 0 (we will later use a broad window of 4-16 nt to cover all potential start sites)
+```{r}
+tally_reads <- function(bam.data.clean, offset)
+  mclapply(bam.data.clean2, function(bam){        # for each bam
+    bam %>% as_tibble() %>%                            
+      mutate(position = ifelse(strand == "+", end - offset, start + offset)) %>%
+      group_by(strand, qwidth, position) %>%            # for each end and read length
+      tally() %>%                          # count reads that occur there
+      ungroup() %>%                        #
+      mutate(rpm = n*1e6/sum(n))
+  }, mc.cores = 4) %>%                     #
+    bind_rows(.id = "sample") 
+tally_reads_0 <- tally_reads(bam.data.clean, 0) # setting the p site offset to 0. 
+
+
+tally_reads_0 %>% group_by(sample) %>% tally(rpm) # a control step to make sure all the reads are normalized to 1 mil
+
+write_csv(tally_reads_0, "/data2/sangeev/paper1/updated_June24/Ribo-RET/data_frame/tally_reads_offset0.csv")
+```
+
+```{r}
+#load the data
+tally_reads <- read_csv("/data2/sangeev/paper1/updated_June24/Ribo-RET/dataframe/tally_reads_offset0.csv")
+```
+
+```{r}
+#load gff
+gff <- readGFF("/data2/sangeev/paper1/updated_June24/Ribo-RET/gffs/GCF_000005845.2_ASM584v2_genomic.gff.gz")
+gff <- gff %>% 
+  as_tibble() %>%
+  filter(type == "CDS") %>%
+  dplyr::select(start, end, strand, gene)
+
+gff
+```
+
+```{r}
+#define start position, here we take a broader window for start codon range as explained in the methods
+start_pos <- gff %>% 
+  rowwise() %>%
+  mutate(position = ifelse(strand == "+", list((start+4):(start+20)), list((end-20):(end-4)))) %>%
+  unnest(position)
+         
+#now we have all the reads mapping to the start sites of all annotated proteins (small and big) in E. coli 
+start_reads <- left_join(start_pos, tally_reads %>% mutate(strand = as.character(strand)), by = c("position", "strand")) %>%
+  mutate(small = ifelse((end-start+1)<=150, "small", "standard"))
+
+#we will tally the reads for unique proteins
+start_reads_1 <- start_reads %>% 
+  filter(sample %in% c("wt_mg", "wt_ns")) %>%
+group_by(sample, gene, small) %>% 
+  summarise(rpm = sum(rpm)) %>%
+  pivot_wider(names_from = sample, values_from = rpm)
+
+#all reads mapping to the start codons
+start_reads_1  %>%
+  write_csv("/data2/sangeev/paper1/updated_June24/Ribo-RET/dataframe/Ribo-RET_start_codon_reads.csv")
+```
+
+#A list of all proteins that have at least 3 fold change upregulation under magnesium stress
+```{r}
+start_reads_1 %>%
+  mutate(ratio=wt_mg/wt_ns) %>%
+  filter(ratio>3) %>% 
+  arrange(desc(ratio)) %>%
+  write_csv("/data2/sangeev/paper1/updated_June24/Ribo-RET/dataframe/Ribo-RET_upregulated_proteins.csv")
+```
+
+

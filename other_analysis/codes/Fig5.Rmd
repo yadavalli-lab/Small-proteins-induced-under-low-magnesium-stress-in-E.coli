@@ -1,0 +1,65 @@
+---
+title: "Fig 5"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+del_updated2 <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/all_strains_repeat_080124.csv")
+
+del_updated2 <- del_updated2 %>%
+  mutate(strain = paste0("∆", strain)) %>% # Add ∆ to the strain column
+  dplyr::select(where(~ !all(is.na(.)))) # Remove columns where all values are NA
+
+del_updated2$strain <- factor(del_updated2$strain, levels = c("∆mgtS", "∆mgrB", "∆pmrR", "∆mgtT", "∆ymiC", "∆ymiA", "∆yoaI", "∆yobF", "∆yddY", "∆yriAB", "∆yadX", "∆ykgS", "∆ydgU", "∆yqhI", "∆yadW", "∆dinQ")) 
+
+del_updated2$wild_type <- factor(del_updated2$wild_type, levels= c("yes",  "no"))
+
+del_updated2%>% 
+  filter(time != 0) %>% 
+  group_by(time, strain, wild_type) %>% 
+  summarise(mean.val = mean(OD), sem.val = sd(OD) / sqrt(n())) %>% 
+  ungroup() %>%
+  ggplot(aes(x = time, y = mean.val, color = wild_type)) +
+  geom_point(size = 0.5) +
+  geom_line() + 
+  geom_errorbar(aes(ymin = mean.val - sem.val, ymax = mean.val + sem.val), 
+                width = 0.4, size= 0.4, linetype = "solid", position = position_dodge(0.3)) +
+  facet_wrap(~strain, ncol = 4) +
+  scale_x_continuous() +
+  scale_y_continuous(trans = "log2", limits = c(0.125, 1.25)) +
+  scale_color_manual(values = c("#636363","#de2d26"), 
+                    labels = expression(wild~type, Delta*italic("small protein"))) +
+  labs(x = "Time (Hours)", y = expression(log[2]("OD"[600]) * ("a.u.")),
+       color = NULL) +
+  theme(text = element_text(size = 16, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+  annotation_logticks(sides = "l")+
+  theme(legend.position = "bottom")
+
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/Fig5.png", dpi = 600, width = 7, height = 7)
+```

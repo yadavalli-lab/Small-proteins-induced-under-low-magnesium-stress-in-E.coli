@@ -1,0 +1,13 @@
+{
+	"n_targets": 4464,
+	"n_bootstraps": 0,
+	"n_processed": 30695485,
+	"n_pseudoaligned": 27418866,
+	"n_unique": 25653960,
+	"p_pseudoaligned": 89.3,
+	"p_unique": 83.6,
+	"kallisto_version": "0.46.2",
+	"index_version": 10,
+	"start_time": "Tue Apr 26 18:53:25 2022",
+	"call": "kallisto quant -i ../../rnaseq/ecoli_genes_for_ribo.kallisto -o ../alignment/kallisto/output/low-mg1 -t 4 ../seqdata/2-cleaned/low-mg1_R1_001.fastq.gz ../seqdata/2-cleaned/low-mg1_R1_001.fastq.gz"
+}

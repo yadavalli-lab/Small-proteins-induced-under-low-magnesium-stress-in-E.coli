@@ -1,0 +1,8 @@
+
+# Ignore large files directly
+Ribo-RET/seqdata/*
+Ribo-RET/alignment/hisat2/output*
+RNA-Seq/alignment/kallisto/output
+RNA-Seq/30-669514637/*
+RNA-Seq/seqdata/*
+

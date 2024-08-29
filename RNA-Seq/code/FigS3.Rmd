@@ -1,0 +1,84 @@
+---
+title: "Fig S3"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+library(clusterProfiler)
+library(tidyverse)
+library(ggplot2)
+library(ggrepel)
+```
+
+#transcript abundance
+```{r}
+filtered <- read_csv("/data2/sangeev/paper1/updated_June24/RNA-Seq/dataframe/kallisto_data.csv")
+
+filtered2 <- filtered %>% dplyr::select(gene,length, `low-mg1`, `low-mg2`, `ns1`, `ns2`) %>% 
+  mutate(mut1=round(`low-mg1`),
+         mut2= round(`low-mg2`), 
+         wt1= round(`ns1`), 
+         wt2=round(`ns2`))
+
+```
+
+
+```{r}
+transcript_abundance <- filtered2 %>%
+  mutate(low_mg_average= (`low-mg1`+`low-mg2`)/2) %>%
+  mutate(no_stress_average= (ns1+ns2)/2) %>%
+  dplyr::select(gene, length,low_mg_average,no_stress_average) 
+```
+
+```{r}
+transcript_abundance %>% 
+mutate(color_group = ifelse(gene %in% c("phoQ", "phoP", "mgtA", "mgtS", "mgrB", "phoB"), "Selected", "Other")) %>%
+ggplot(., aes(x = no_stress_average, y = low_mg_average, color=color_group)) +
+  geom_point(data = . %>% filter(color_group == "Selected"), size = 2, alpha = 1, shape=2) +
+  geom_point(data = . %>% filter(color_group == "Other"), size = 2, alpha = 0.2) +
+ scale_x_log10(limits = c(1e-1, 1e5), breaks = c(1e0, 1e1, 1e2, 1e3, 1e4, 1e5), labels = scales::trans_format("log10", scales::math_format(10^.x)))  +
+  scale_y_log10(limits = c(1e-1, 1e5), breaks = c(1e0, 1e1, 1e2, 1e3, 1e4, 1e5), labels = scales::trans_format("log10", scales::math_format(10^.x)))  +
+  geom_abline(aes(slope = 1, intercept= 0), linetype = 5)+
+  guides(col = F) +
+  ggpubr::theme_pubr() +
+  theme_bw()+
+    theme(text = element_text(size = 15),
+        panel.grid = element_blank(),
+        legend.position="none")+
+  coord_equal() +
+  #annotate("text", x = 0.1, y = 100, label = paste0("R= ", round(correlation, 2)), size = 2, color = "black") +
+  ggrepel::geom_text_repel(data = . %>% filter(gene %in% c("phoQ", "phoP", "mgtA", "mgtS",  "mgrB", "phoB")), aes(x = no_stress_average, y = low_mg_average, label = gene, fontface = "italic"),
+                            show.legend = FALSE,
+                            box.padding = 0.35, point.padding = 0.5,
+                            segment.color = 'grey50', segment.alpha = 0.6,
+                            arrow = arrow(length = unit(0.02, 'npc'), type = 'closed'),
+                            force = 5) +
+  scale_color_manual(values = c("Selected" = "red", "Other" = "grey")) +
+labs(x = "No stress (transcript per million)", y = expression("Low Mg (transcript per million)")) +
+    theme(text = element_text(size = 14,family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"))
+
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS3.png", dpi = 600, width = 3.5, height =3.5)
+```
+
+
+

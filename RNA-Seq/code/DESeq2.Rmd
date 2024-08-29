@@ -1,0 +1,130 @@
+---
+title: "RNA-Seq_analysis"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+
+#load packages
+```{r}
+library(clusterProfiler)
+library(DESeq2) 
+library(tidyverse)
+library(org.EcK12.eg.db) # https://bioconductor.org/packages/release/BiocViews.html#___OrgDb for e coli - 
+library(ggplot2)
+library(ggrepel)
+```
+
+
+## Read in Kallisto output for my rna seq data
+```{r}
+file.loc <- list.files(path = "/data2/sangeev/paper1/updated_June24/RNA-Seq/alignment/alignment/kallisto/output", 
+                       pattern = "tsv",
+                       full.names = TRUE,
+                       recursive = TRUE)
+
+kallisto_data <- sapply(file.loc, read_tsv, simplify = FALSE) %>% # Read in multiple kallisto files
+  bind_rows(.id = "sample") # Join them into a single tibble
+
+kallisto_data <- kallisto_data %>%
+  separate(sample, into = LETTERS[1:11], sep = "/") %>% # Separate the file name to get sample name
+  dplyr::select(K, target_id, est_counts, tpm, eff_length, length) # Keep only these 3 columns for subsequent analysis
+
+filtered <- kallisto_data %>% 
+    filter(K %in% c("low-mg1", "low-mg2", "ns1", "ns2")) %>%
+  dplyr::select(K, target_id, tpm, length) %>%
+    pivot_wider(names_from = K, values_from = tpm) %>%
+  rename("target_id"= "gene")
+
+write_csv(filtered, "/data2/sangeev/paper1/updated_June24/RNA-Seq/dataframe/kallisto_data.csv")
+```
+
+
+```{r}
+filtered <- read_csv("/data2/sangeev/paper1/updated_June24/RNA-Seq/dataframe/kallisto_data.csv")
+
+filtered2 <- filtered %>% dplyr::select(gene,length, `low-mg1`, `low-mg2`, `ns1`, `ns2`) %>% 
+  mutate(mut1=round(`low-mg1`),
+         mut2= round(`low-mg2`), 
+         wt1= round(`ns1`), 
+         wt2=round(`ns2`))
+
+```
+
+
+## Prepare data for differential gene expression analysis
+```{r}
+#need matrix for the packages. 
+counts_matrix <- filtered2[, 7:10] %>%
+  as.matrix() 
+  counts_matrix
+  
+  rownames(counts_matrix) <- filtered2$gene
+  counts_matrix
+  
+  #create a new dataframe with information about the data
+  
+  condition_df <- data.frame(conditions= factor(rep(c("Mutant", "Wild-Type"), each=2),
+                                                levels = c("Wild-Type", "Mutant")))
+
+condition_df
+
+head(counts_matrix)
+
+```
+## Perform differential gene expression analysis
+```{r}
+data_for_deseq <- DESeqDataSetFromMatrix(countData= counts_matrix,
+                                         colData= condition_df,
+                                         design= ~conditions)
+data_for_deseq
+
+diff_exp_analysis <- DESeq(data_for_deseq)
+diff_exp_analysis
+
+diff_exp_results <- results(diff_exp_analysis)
+diff_exp_results
+```
+
+
+```{r}
+plotMA(diff_exp_results)
+
+# Log foldchange shrinkage
+diff_exp_results_shrink <- lfcShrink(diff_exp_analysis, 
+                                     coef = 2,
+                                     type = "apeglm")
+
+plotMA(diff_exp_results)
+plotMA(diff_exp_results_shrink)
+```
+## Identify differentially expressed genes
+```{r}
+diff_exp_tibble <- diff_exp_results_shrink%>%
+  as.tibble() %>%
+  mutate(gene= rownames(diff_exp_results_shrink)) %>%
+  dplyr::select(gene, everything())
+
+#get a list of genes that are differentially regulated
+diff_exp_tibble %>%
+  filter(log2FoldChange > 0, padj <0.05) %>% arrange(desc(log2FoldChange)) %>%
+  write_csv("/data2/sangeev/paper1/updated_June24/dataframe/RNA_seq_differentially_regulated.csv")
+```
+
+

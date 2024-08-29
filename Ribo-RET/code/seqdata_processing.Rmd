@@ -1,0 +1,189 @@
+---
+title: "Sequencing data processing"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+###Adapter removal
+```{bash}
+cutadapt -a AGATCGGAAGAGCACACGTCTGAACTCCAGTCA -j 32 -o 2-adapter_removed_demux/test.fq.gz 1-original/SV-Ret-Stress_R2_001.fastq.gz
+```
+
+###Demultiplex
+##Barcodes with adapter sequence
+```{bash}
+echo ">wt_ns
+ATCGTAGATCGGAAGAGCACACGTCTGAACTCCAGTCA
+>wt_mg
+AGCTAAGATCGGAAGAGCACACGTCTGAACTCCAGTCA" > ../seqdata/barcodes_adapters.fa
+```
+
+##Barcodes Only
+```{bash}
+echo ">wt_ns
+ATCGT
+>wt_mg
+AGCTA" > ../seqdata/barcodes_only.fa
+```
+
+Min read length is 14 (14insert + 4umi + 5um = 23nt), max read length is 40.
+```{bash}
+cutadapt -j 32 -a file:barcodes_adapters.fa -o 2-adapter_removed_demux/{name}.fq.gz ../seqdata/1-original/SV-Ret-Stress_R1_001.fastq.gz -m 23 -M 49 1>../Reports/cutadapt.stdout
+```
+
+Apparently you can do it at one short-Demultiplexing and adapter removal of our data
+
+```{bash}
+cutadapt -j 32 -a file:../seqdata/barcodes_adapters.fa -o ../seqdata/2-adapter_removed_demux/{name}.fq.gz ../seqdata/1-original/SV-Ret-Stress_R1_001.fastq.gz -m 23 -M 49 1>../Reports/cutadapt.stdout
+```
+
+### UMI tools
+```{r}
+export PATH=/usr/local/bin:$PATH
+```
+
+
+Use the 5nt 3' UMI and 4nt 5' UMI as a UMI, extract each of them, using forking to parallelize.
+
+```{bash}
+export PATH=/usr/local/bin:$PATH
+```
+
+```{bash}
+ conda create -n umi_tools_env -c bioconda python=3.7 umi_tools 
+ conda activate umi_tools_env
+ conda deactivate
+```
+
+```{bash}
+for file in ../seqdata/2-adapter_removed_demux/*.gz; do
+  if [[ $file == *"unknown"* ]]; then
+    continue
+  fi
+  
+  if [[ $file == *"test"* ]]; then
+    continue
+  fi
+  
+  output=../seqdata/3-umi_extracted/`basename $file`
+  logfile=../Reports/`basename $file | cut -d '.' -f 1`.umitools_log
+  
+  umi_tools extract --stdin=$file --extract-method=regex --bc-pattern='^(?P<umi_1>.{4}).+(?P<umi_2>.{5})' --log=$logfile --stdout=$output &
+done
+```
+
+
+### rRNA/tRNA depletion
+
+Retreive some e coli files
+```{bash}
+wget -P "../fastas/" https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.fna.gz
+
+wget -P "../gffs/" https://ftp.ncbi.nlm.nih.gov/genomes/all/GCF/000/005/845/GCF_000005845.2_ASM584v2/GCF_000005845.2_ASM584v2_genomic.gff.gz
+
+gunzip ../fastas/GCF_000005845.2_ASM584v2_genomic.fna.gz
+```
+
+##### Make rRNA/tRNA fasta
+
+Make an e coli rRNA/tRNA fasta. **only ever run this as a chunk, don't run parts of it because it will keep reverse complementing stuff**
+```{r}
+library(Biostrings)
+library(rtracklayer)
+
+gff <- readGFFAsGRanges("../gffs/GCF_000005845.2_ASM584v2_genomic.gff.gz")
+
+fasta <- readDNAStringSet("../fastas/GCF_000005845.2_ASM584v2_genomic.fna")
+
+names(fasta) <- sapply(names(fasta), function(x){
+  unlist(strsplit(x, split = " "))[[1]]
+})
+
+rtrna.gff <- gff[gff$type %in% c("tRNA", "rRNA")]
+
+rtrna.seqs <- setNames(fasta[rtrna.gff], rtrna.gff$ID)
+
+neg.strand.genes <- rtrna.gff[strand(rtrna.gff) == "-"]$ID
+
+(rtrna.seqs[names(rtrna.seqs) %in% neg.strand.genes] <- reverseComplement(rtrna.seqs[names(rtrna.seqs) %in% neg.strand.genes]))
+
+writeXStringSet(rtrna.seqs, "../fastas/ecoli_rtrna.fa")
+```
+
+##### Make indices
+
+Make an index for the genome and rRNA/tRNA
+```{bash}
+for file in ../fastas/*; do
+  iname=../alignment/hisat2/indices/`basename $file | cut -d '.' -f 1`  
+  
+  hisat2-build $file $iname &
+done
+```
+
+##### rRNA depletion
+
+Turns out this is single threaded, so I can ask for one thread and fork to background.
+```{bash}
+for file in ../seqdata/3-umi_extracted/*; do
+  index=../alignment/hisat2/indices/ecoli_rtrna
+  
+  un=../seqdata/4-rtrna_depleted/`basename $file`
+  
+  # don't need it
+  samfile=/dev/null
+  
+  hisat2 -x $index --un-gz $un -p 2 -S $samfile -U $file &
+done
+```
+
+
+### Alignment
+
+Pipes straight to samtools sort to skip the sam and give a sorted bam as final output. Don't save unaligned reads, don't do spliced alignment. This uses `tee` to write to `stdout` and indexing at the same time.
+```{bash}
+for file in ../seqdata/4-rtrna_depleted/*; do
+  index=../alignment/hisat2/indices/GCF_000005845
+  
+  output=../alignment/hisat2/output2/`basename $file | cut -d "." -f 1`.bam
+  
+  summaryfile=../Reports/`basename $file | cut -d "." -f 1`_hisat2_report.txt
+  
+  #unaligned=../alignment/hisat2/unaligned/`basename $file | cut -d "." -f 1`_mystery.fq.gz
+  
+  echo "operating on $file"
+  
+  hisat2 -x $index -p 8 --no-unal --no-spliced-alignment --new-summary --summary-file $summaryfile -U $file | tee | samtools sort -O BAM | tee $output | samtools index - $output\.bai
+done
+```
+
+### Deduplication
+
+Again, using UMI tools. We will map these reads to the genome. 
+```{bash}
+for file in ../alignment/hisat2/output2/*.bam; do
+  fname=`basename $file | cut -d '.' -f 1`
+  
+  mkdir -p ../Reports/umitools_$fname
+  
+  umi_tools dedup -I $file --output-stats=../Reports/umitools_$fname -S ../alignment/hisat2/output_dedup/$fname\.bam &
+done
+```
+
+

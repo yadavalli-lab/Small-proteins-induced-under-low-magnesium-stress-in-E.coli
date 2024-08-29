@@ -1,0 +1,65 @@
+---
+title: "Fig 1B"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+**Depends on functions loaded from /data2/sangeev/paper1/updated_June24/Ribo-RET/code/riboret_analysis_functions.Rmd**
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+#Figure 1B- load the data
+```{r}
+start_reads_1 <- read_csv("/data2/sangeev/paper1/updated_June24/Ribo-RET/dataframe/Ribo-RET_start_codon_reads.csv")
+```
+
+
+```{r}
+#check the correlation between start site reads in stress vs no_stress conditions
+
+  start_reads_1 %>%
+   ggplot(., aes(x = wt_ns, y = wt_mg)) +  
+  geom_abline(aes(slope = 1, intercept= 0), linetype = 5) +
+  geom_point(size = 1, alpha = 0.5, col = "gray") +
+  ggpubr::stat_cor(aes(label = ..r.label..)) +
+  geom_point(data = . %>% filter(small == "small"), aes(x = wt_ns, y = wt_mg, color = "red"), inherit.aes = F) +
+  # ggpointdensity::geom_pointdensity() +
+  scale_x_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)),
+                limits = c(1e0, 1e5),
+                breaks = c(1e0, 1e1, 1e2, 1e3, 1e4, 1e5)) +
+  scale_y_log10(labels = scales::trans_format("log10", scales::math_format(10^.x)),
+                limits = c(1e0, 1e5),
+                breaks = c(1e0, 1e1, 1e2, 1e3, 1e4, 1e5)) +
+  guides(col = F) +
+  ggpubr::theme_pubr() +
+  coord_equal() +
+  ggrepel::geom_label_repel(
+    data = . %>% filter(gene %in% c("mgrB", "mgtS", "pmrR")),
+    aes(x = wt_ns, y = wt_mg, label = ifelse(gene %in% c("mgrB", "mgtS", "pmrR"), paste0("italic(", gene, ")"), gene)),
+    inherit.aes = FALSE,
+    arrow = arrow(length = unit(0.02, "npc"), type = "closed", ends = "last"),
+    nudge_y = 1,
+    segment.size = 0.3,
+    parse = TRUE
+  )+
+  labs(x = "No stress RPM", y = expression("Low Mg" ^2+ "RPM")) +
+    theme(text = element_text(size = 14,family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"))
+
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/Fig1B.png", dpi = 600, width = 4, height = 4)
+```

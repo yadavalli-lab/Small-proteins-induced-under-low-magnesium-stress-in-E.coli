@@ -1,0 +1,143 @@
+---
+title: "Promoter_reporter_assay"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+**Depends on functions loaded from /data2/2021_lassya/code/riboret_analysis_functions.Rmd**
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+library(tidyverse)
+```
+
+```{r}
+#load the data
+promoter_reporter <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/promoter_reporter.csv")
+```
+
+```{r}
+#prepare the dataframe in the order we want to present
+promoter_reporter$protein <- factor(promoter_reporter$protein, levels = c("mgrB", "mgtS-mgtT", "proP-pmrR","pmrR", "ymiA-yciX-ymiC", "ymiC",  "yoaI", "yobF", "yddY", "yriA-yriB", "yadX-clcA-yadW", "yadW","ykgS",  "asr-ydgU", "ydgU", "yqhI",  "dinQ"))
+
+promoter_reporter$empty_vector <- factor(promoter_reporter$empty_vector, levels= c("Psmall protein",  "Pempty vector"))
+
+promoter_reporter$strain <- factor(promoter_reporter$strain, levels= c("wild_type",  "mutant"))
+```
+
+```{r}
+#plot the data
+
+mgrB <- promoter_reporter %>% 
+  filter(protein=="mgrB") %>%
+  group_by(time, protein, strain, empty_vector) %>%
+  summarise(mean.val = mean(`yfp:cfp`), sd.val = sd(`yfp:cfp`), sem.val = sd.val / sqrt(n())) %>%
+  ungroup() %>%
+  ggplot(aes(x = time, y = mean.val, color = empty_vector, linetype = strain)) +
+  geom_smooth(aes(linetype = strain), size = 0.5, method = "loess", se = FALSE) +
+  geom_errorbar(aes(ymin = mean.val - sd.val, ymax = mean.val + sd.val),linetype = "solid", width = 0.2) +
+  facet_wrap(~protein, ncol = 4) +
+  scale_x_continuous(breaks = c(2, 6, 10, 14, 18, 22), expand = c(0.01, 0.01)) +
+  scale_color_manual(values = c("Pempty vector" = "#636363", "Psmall protein" = "#de2d26")) +
+  labs(x = "Time (Hours)", y = "YFP:CFP (a.u.)") +
+    theme(text = element_text(size = 18, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+   theme(legend.position = "none")
+        
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig3B-mgrB_promoter_reporter.png", width = 3, height = 3, units = "in", dpi = 600)
+
+plot_others <- promoter_reporter %>%
+  filter(protein != "mgrB") %>%
+  group_by(time, protein, strain, empty_vector) %>%
+  summarise(mean.val = mean(`yfp:cfp`), sd.val = sd(`yfp:cfp`), sem.val = sd.val / sqrt(n())) %>%
+  ungroup() %>%
+  ggplot(aes(x = time, y = mean.val, color = empty_vector, linetype = strain)) +
+  geom_smooth(aes(linetype = strain), size = 0.5, method = "loess", se = FALSE) +
+  geom_errorbar(aes(ymin = mean.val - sd.val, ymax = mean.val + sd.val),linetype = "solid", width = 0.2) +
+  facet_wrap(~protein, ncol = 4) +
+  scale_x_continuous(breaks = c(2, 6, 10, 14, 18, 22), expand = c(0.01, 0.01)) +
+  scale_color_manual(values = c("Pempty vector" = "#636363", "Psmall protein" = "#de2d26")) +
+  labs(x = "Time (Hours)", y = "YFP:CFP (a.u.)") +
+    theme(text = element_text(size = 18, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+   theme(legend.position = "none")
+
+promoter_reporter %>%
+  group_by(time, protein, strain, empty_vector) %>%
+  summarise(mean.val = mean(`yfp:cfp`), sd.val = sd(`yfp:cfp`), sem.val = sd.val / sqrt(n())) %>%
+  ungroup() %>%
+  ggplot(aes(x = time, y = mean.val, color = empty_vector, linetype = strain)) +
+  geom_smooth(aes(linetype = strain), size = 0.5, method = "loess", se = FALSE) +
+  geom_errorbar(aes(ymin = mean.val - sd.val, ymax = mean.val + sd.val),linetype = "solid", width = 0.2) +
+  facet_wrap(~protein, ncol = 4) +
+  scale_x_continuous(breaks = c(2, 6, 10, 14, 18, 22), expand = c(0.01, 0.01)) +
+  scale_y_continuous(limits = c(0.05, 0.35))+
+  scale_color_manual(values = c("Pempty vector" = "#636363", "Psmall protein" = "#de2d26")) +
+  labs(x = "Time (Hours)", y = "YFP:CFP (a.u.)") +
+    theme(text = element_text(size = 18, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+   theme(legend.position = "none")
+
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/figures/Fig1/pro6.png", width = 12, height = 12, units = "in", dpi = 600)
+
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig3B-other_proteins_promoter_reporter.png", width = 12, height = 12, units = "in", dpi = 600)
+```
+```{r}
+promoter_reporter_yoaI <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/pro_rep_yoaI.csv")
+
+#prepare the dataframe in the order we want to present
+
+promoter_reporter_yoaI$empty_vector <- factor(promoter_reporter_yoaI$empty_vector, levels= c("Psmall protein",  "Pempty vector"))
+
+promoter_reporter_yoaI$strain <- factor(promoter_reporter_yoaI$strain, levels= c("wild_type",  "mutant"))
+
+promoter_reporter_yoaI$stress <- factor(promoter_reporter_yoaI$stress, levels= c("10mM",  "low_mg"))
+```
+
+```{r}
+promoter_reporter_yoaI %>%
+  group_by(time, protein, strain, empty_vector, stress) %>% 
+  summarise(mean.val = mean(`yfp:cfp`), sd.val = sd(`yfp:cfp`), sem.val = sd.val / sqrt(n())) %>%
+  ungroup() %>%
+   ggplot(aes(x = time, y = mean.val, color=empty_vector)) +
+   #geom_line(aes(linetype = strain), size = 1) +
+  geom_errorbar(aes(ymin = mean.val - sem.val, ymax = mean.val + sem.val), width = 0.2) +
+  facet_grid(stress~strain) +
+  geom_smooth(method = "loess", se = FALSE) +
+  scale_x_continuous(breaks = seq(0,21,3)) +
+  scale_y_continuous(limits = c(0.05, 0.3))+
+  #scale_y_continuous(trans = "log2") +
+  scale_color_manual(values = c("#de2d26", "#636363")) +
+  labs(x = "Time (Hours)", y = "YFP:CFP (a.u.)",
+       color = NULL) +
+  theme(legend.position = "none",
+    text = element_text(size = 13, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1))+
+   annotation_logticks(sides = "l")
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/figures/Fig1/yoaI_ns_low_mg.png", width = 5, height = 3, units = "in", dpi = 600)
+```
+

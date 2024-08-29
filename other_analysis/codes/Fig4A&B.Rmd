@@ -1,0 +1,90 @@
+---
+title: "Fig 4A&B"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+```{r}
+yoai_phosphate <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/yoaI_phosphate2.csv")
+
+yoai_phosphate$strain <- factor(yoai_phosphate$strain, levels = c("pYoaI", "Empty_vector"))
+
+yoai_phosphate$stress <- factor(yoai_phosphate$stress, levels = c("No_stress", "stress"), labels = c("No stress", "Low phosphate"))
+```
+
+#Fig 4A
+```{r}
+yoai_phosphate %>% 
+  filter(!mutant=="ΔphoQ") %>%
+   group_by(time, strain, stress, mutant) %>% 
+  summarise(mean.val = mean(`yfp:cfp`), sd.val = sd(`yfp:cfp`), sem.val = sd.val / sqrt(n())) %>%  # Change sem.val to sd.val
+  ungroup() %>% 
+  ggplot(aes(x = time, y = mean.val, color=strain)) +
+   #geom_line(aes(linetype = strain), size = 1) +
+  geom_errorbar(aes(ymin = mean.val - sem.val, ymax = mean.val + sem.val), width = 0.2) +
+  facet_grid(stress~mutant) +
+  geom_smooth(method = "loess", se = FALSE) +
+  scale_x_continuous(breaks = seq(0,21,3)) +
+  scale_y_continuous(limits = c(0.05, 0.2))+
+  #scale_y_continuous(trans = "log2") +
+  scale_color_manual(values = c("#de2d26", "#636363"), labels = c("pYoaI", "pEmpty vector")) +
+  labs(x = "Time (Hours)", y = expression("P"["yoaI"]~transcription~"\nYFP:CFP (a.u.)"),
+       color = NULL) +
+  theme(legend.position = "bottom",
+    text = element_text(size = 13, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1))+
+   annotation_logticks(sides = "l")
+
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig4A.png", width = 5, height = 3, units = "in", dpi = 600)
+```
+
+#Fig4B
+```{r}
+yoai_phosphate %>% 
+  filter(mutant=="ΔphoQ") %>%
+   group_by(time, strain, stress) %>% 
+  summarise(mean.val = mean(`yfp:cfp`), sd.val = sd(`yfp:cfp`), sem.val = sd.val / sqrt(n())) %>%  # Change sem.val to sd.val
+  ungroup() %>% 
+  ggplot(aes(x = time, y = mean.val, color=strain)) +
+   #geom_line(aes(linetype = strain), size = 1) +
+  geom_errorbar(aes(ymin = mean.val - sem.val, ymax = mean.val + sem.val), width = 0.2) +
+  geom_smooth(method = "loess", se = FALSE) +
+  scale_x_continuous(breaks = seq(0,21,3)) +
+  #scale_y_continuous(trans = "log2") +
+  facet_grid(stress~.)+
+  scale_color_manual(values = c("#de2d26", "#636363"),  labels = c("pYoaI", "pEmpty vector")) +
+  labs(x = "Time (Hours)", y = expression("P"["yoaI"]~transcription~"\nYFP:CFP (a.u.)"),
+       color = NULL) +
+  theme(legend.position = "bottom",
+    text = element_text(size = 13, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) 
+
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig4B.png", width = 3, height = 3, units = "in", dpi = 600)
+
+```
