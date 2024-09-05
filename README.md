@@ -72,7 +72,7 @@ When knitted to an HTML, each R Markdown (**`Rmd`**) document will display the v
 ### Notes on Directory Structure and Files:
 - `output2`: Contains reads that have not been deduplicated.
 - `output_dedup`: Contains deduplicated reads. Use this directly for downstream analysis. 
-- `adapter_removed_demux` (GSE files): These files are adapter-removed and demultiplexed. After this step, the reads should proceed through the following stages:
+- `adapter_removed_demux` (GSE276379): These files are adapter-removed and demultiplexed. After this step, the reads should proceed through the following stages:
   - `UMI Extraction`: Extract unique molecular identifiers from the reads.
   - `rtRNA Depletion`: Remove ribosomal RNA sequences.
   - `Mapping`: Align the reads to the reference genome using HISAT2.
@@ -100,7 +100,7 @@ When knitted to an HTML, each R Markdown (**`Rmd`**) document will display the v
 ```
 ### Notes on Directory Structure and Files:
 - `output`: This folder contains reads that have been mapped to the transcriptome using Kallisto.
-- `2-cleaned` (GSE files): These are the demultiplexed reads. After this step, the reads should proceed through the following stage:
+- `2-cleaned` (GSE276379): These are the demultiplexed reads. After this step, the reads should proceed through the following stage:
   - `Mapping`: Align the reads to the reference transcriptome using Kallisto.
 
 3. Other Analysis Directory Structure
