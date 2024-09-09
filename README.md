@@ -1,6 +1,6 @@
 # Small-proteins-induced-under-low-magnesium-stress
 
-This repository contains the code and associated files for the study titled "Investigation of small proteins induced under magnesium starvation reveals a novel connection among three signaling systems in _E. coli_," currently available on _bioRxiv_ ([link to paper](#)).
+This repository contains the code and associated files for the study titled "Translational profiling of stress-induced small proteins uncovers a connection among distinct signaling systems," currently available on _bioRxiv_ ([link to paper](#)).
 
 ## Repository Organization
 
