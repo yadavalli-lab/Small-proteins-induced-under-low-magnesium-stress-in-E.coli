@@ -61,7 +61,6 @@ When knitted to an HTML, each R Markdown (**`Rmd`**) document will display the v
 │   └── figures
 ├── dataframes
 ├── fastas
-├── figures
 ├── gffs
 └── seqdata
     ├── 1-original
@@ -91,7 +90,6 @@ When knitted to an HTML, each R Markdown (**`Rmd`**) document will display the v
 │   └── figures
 ├── dataframe
 ├── fasta
-├── figures
 ├── gffs
 ├── reports
 └── seqdata
@@ -109,11 +107,11 @@ When knitted to an HTML, each R Markdown (**`Rmd`**) document will display the v
 ├── other_analysis
 │   ├── codes
 │   ├── dataframe
-│   └── figures
+│── figures 
 ```
 ### Notes on Directory Structure and Files:
 - `codes`: This folder contains scripts specifically related to the analysis and generation of figures referenced in the paper, identified by their figure numbers.
 - `dataframe`: Contains data files that are used for the respective figures, matching the data used in the analysis scripts.
-- `figures`: Stores the generated figures, each named according to its respective figure number from the paper.
+- `figures`: Stores all the generated figures, each named according to its respective figure number from the paper.
 
   
