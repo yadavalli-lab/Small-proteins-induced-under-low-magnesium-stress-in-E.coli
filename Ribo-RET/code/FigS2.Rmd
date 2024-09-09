@@ -91,38 +91,38 @@ function(reads.table, gene, pad, intern = 30){
 
 #Figure S2
 ```{r}
-a <- plot_gene(tally_reads, gene = gff %>% filter(gene == "mgtS"), pad = 0, intern = 100)
+a <- plot_gene(tally_reads, gene = gff %>% filter(gene == "phoP"), pad = 0, intern = 100)
 
-b <- plot_gene(tally_reads, gene = gff %>% filter(gene == "phoP"), pad = 0, intern = 100)
+b <- plot_gene(tally_reads, gene = gff %>% filter(gene == "phoQ"), pad = 0, intern = 100)
 
-c <- plot_gene(tally_reads, gene = gff %>% filter(gene == "phoQ"), pad = 0, intern = 100)
+c <- plot_gene(tally_reads, gene = gff %>% filter(gene == "mgtS"), pad = 0, intern = 100)
 
 d <- plot_gene(tally_reads, gene = gff %>% filter(gene == "phoB"), pad = 0, intern = 100)
 ```
 
 ```{r}
-#mgtS
-a
-```
-```{r}
 #phoP
-b
+a
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS2a.png", dpi = 600, width = 5, height = 3.5)
 ```
+
 ```{r}
 #phoQ
-c
+b
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS2b.png", dpi = 600, width = 5, height = 3.5)
 ```
+
+```{r}
+#mgtS
+c
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS2c.png", dpi = 600, width = 5, height = 3.5)
+```
+
 ```{r}
 #phoB
 d
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS2d.png", dpi = 600, width = 5, height = 3.5)
 ```
 
-```{r}
-top <- (b | c) 
-bottom <- (a | d) 
-(ff <- top / bottom)
-
-ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS2.pdf", dpi = 300, width = 9, height = 6)
-```
 
 

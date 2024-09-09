@@ -1,0 +1,145 @@
+---
+title: "Fig 9"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+#Fig9A
+```{r}
+bgal_yoaI_envZ <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/bgal_yoaI_envZ.csv")
+
+bgal_yoaI_envZ$strain <- factor(bgal_yoaI_envZ$strain, levels = c("pUT18C-YoaI/pKT25", "pUT18C-MgrB/pKT25-PhoQ", "pUT18C-YoaI/pKT25-PhoQ", "pUT18C-YoaI/pKT25-PhoR", "pUT18C-YoaI/pKT25-EnvZ"))
+
+bgal_yoaI_envZ %>%
+    group_by(strain) %>% 
+  mutate(mean.val = mean(`β-galactosidase activity (MU)`), sd.val = sd(`β-galactosidase activity (MU)`), sem.val = sd.val / sqrt(n())) %>%  # Change sem.val to sd.val
+  ungroup() %>% 
+  ggplot(., aes(x = strain, y = `β-galactosidase activity (MU)`)) +
+  geom_dotplot(binaxis = "y", stackdir = "center", binwidth = 20, stackratio = 1,
+               dotsize = 2, fill = "lightgrey", color = "black", method="dotdensity") +
+    #geom_errorbar(aes(ymin = mean.val - sem.val, ymax = mean.val + sem.val), width = 0.2)+ 
+ stat_summary(fun = mean, geom = "crossbar", size = 0.3, width= 0.6, color = "black") +
+  stat_summary(fun.data = mean_se, geom = "text", aes(label = round(..y.., 1)), vjust = -1, color = "black", 
+               position = position_nudge (x = 0.45, y = -0.1)) +
+  #scale_y_break(c(200,1400)) +
+  labs(x = "Strain",
+       y = "β-galactosidase activity (MU)")+
+  theme(
+    text = element_text(size = 11, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"), 
+    axis.text.x = element_text(angle = 20, hjust = 1)) 
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig9A.png", width = 5, height = 4, units = "in", dpi = 600)
+```
+
+#Fig9B
+```{r}
+#stationary phase omrB reporter
+omrB_yoaI <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/PomrB_∆yoaI_stationary.csv")
+
+
+omrB_yoaI$stress <- factor(omrB_yoaI$stress, levels = c("No_stress", "low_Mg"))
+
+omrB_yoaI$strain <- factor(omrB_yoaI$strain, levels = c("wild_type", "∆yoaI"))
+
+mean_value_mcherry<- omrB_yoaI %>%
+  group_by(strain, stress) %>%
+  summarise(mean.val=mean(fluorescence), .groups = 'drop') 
+
+color_yoaI_mcherry <- c("∆yoaI" = "#de2d26", "wild_type" = "#636363")
+
+omrB_yoaI %>%
+group_by(strain, stress) %>% tally()
+
+omrB_yoaI %>%
+group_by(stress) %>%
+ggplot(., aes(x = strain, y = fluorescence, colour = strain, fill = "white")) +
+geom_violin(fill="white", position = position_dodge(width = 0.9), adjust = 1) +
+  geom_quasirandom(method='tukeyDense', alpha=0.1) +
+  stat_summary(fun = mean, geom = "crossbar", size = 0.3, width= 0.3, color = "#2c7fb8") +
+  labs(x = NULL, y = "PomrB (mcherry (a.u.)") +
+  scale_fill_manual(values = "white") +  # Fill color for all boxes
+  scale_color_manual(values = color_yoaI_mcherry) +  # Outline colors
+  stat_compare_means(ref.group = "wild_type", aes(label = ..p.signif..), symnum.args = symnum.args, method = "t.test") +
+  theme(text = element_text(size = 15, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black")) +
+  annotation_logticks(sides = "l") +
+  facet_wrap(~stress) +
+  theme(legend.position = "none") +
+    theme(
+  panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "gray80"), # Adjust major grid lines
+  panel.grid.minor = element_line(size = 0.25, linetype = 'solid', colour = "gray90")) + 
+  geom_text(data = mean_value_mcherry, aes(x = strain, label = round(mean.val, 1)), y = 500, 
+            vjust = 0, hjust = -0.2, color = "#2c7fb8", size = 3.5) 
+
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig9B_stationary.png", width = 5.3, height = 3.2, units = "in", dpi = 600) #without the mean value text
+```
+
+```{r}
+#stationary phase omrB reporter
+omrB_yoaI_ex <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/PomrB_∆yoaI_exponential.csv")
+
+omrB_yoaI_ex$stress <- factor(omrB_yoaI_ex$stress, levels = c("No_stress", "low_Mg"))
+
+omrB_yoaI_ex$strain <- factor(omrB_yoaI_ex$strain, levels = c("wild_type", "∆yoaI"))
+
+mean_value_mcherry_ex<- omrB_yoaI_ex %>%
+  group_by(strain, stress) %>%
+  summarise(mean.val=mean(fluorescence), .groups = 'drop') 
+
+color_yoaI_mcherry <- c("∆yoaI" = "#de2d26", "wild_type" = "#636363")
+
+omrB_yoaI %>%
+group_by(strain, stress) %>% tally()
+
+omrB_yoaI_ex %>%
+group_by(strain, stress) %>% tally()
+
+omrB_yoaI_ex %>%
+group_by(stress) %>%
+ggplot(., aes(x = strain, y = fluorescence, colour = strain, fill = "white")) +
+geom_violin(fill="white", position = position_dodge(width = 0.9), adjust = 1) +
+  geom_quasirandom(method='tukeyDense', alpha=0.1) +
+  stat_summary(fun = mean, geom = "crossbar", size = 0.3, width= 0.3, color = "#2c7fb8") +
+  labs(x = NULL, y = "PomrB (mcherry (a.u.)") +
+  scale_fill_manual(values = "white") +  # Fill color for all boxes
+  scale_color_manual(values = color_yoaI_mcherry) +  # Outline colors
+  stat_compare_means(ref.group = "wild_type", aes(label = ..p.signif..), symnum.args = symnum.args, method = "t.test") +
+  theme(text = element_text(size = 15, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black")) +
+  annotation_logticks(sides = "l") +
+  facet_wrap(~stress) +
+  theme(legend.position = "none") +
+    theme(
+  panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "gray80"), # Adjust major grid lines
+  panel.grid.minor = element_line(size = 0.25, linetype = 'solid', colour = "gray90")) + 
+  geom_text(data = mean_value_mcherry_ex, aes(x = strain, label = round(mean.val, 1)), y = 500, 
+            vjust = 0, hjust = -0.2, color = "#2c7fb8", size = 3.5) 
+
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig9C_exponential.png", width = 5.3, height = 3.2, units = "in", dpi = 600) #without the mean value text
+```
+

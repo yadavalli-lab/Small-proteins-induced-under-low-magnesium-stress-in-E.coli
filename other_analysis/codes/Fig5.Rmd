@@ -27,7 +27,7 @@ library(ggplot2)
 ```
 
 ```{r}
-del_updated2 <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/all_strains_repeat_080124.csv")
+del_updated2 <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/all_strains_repeat_080124.csv")
 
 del_updated2 <- del_updated2 %>%
   mutate(strain = paste0("∆", strain)) %>% # Add ∆ to the strain column

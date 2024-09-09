@@ -29,7 +29,7 @@ library(ggplot2)
 #Fig6A
 ```{r}
 #upload the data
-del_pmrR_yobF <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/yobF_pmrR.csv")
+del_pmrR_yobF <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/yobF_pmrR.csv")
 ```
 
 #Fig 6A
@@ -115,7 +115,7 @@ ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig
 ```
 #Fig6C
 ```{r}
-yriAB_del_final <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/yriAB_del_no_comp_repeat.csv")
+yriAB_del_final <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/yriAB_del_no_comp_repeat.csv")
 
 #excluding the synonymous mutation data
 yriAB_del_final <- yriAB_del_final %>%
@@ -156,7 +156,7 @@ ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig
 ```
 #Fig6D
 ```{r}
-yqhI_repeat <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/yqhI_repeat.csv")
+yqhI_repeat <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/yqhI_repeat.csv")
 
 yqhI_repeat$wt <- factor(yqhI_repeat$wt, levels = c("yes", "no"), labels = c("Wild type", "∆yqhI"))
 yqhI_repeat$vector <- factor(yqhI_repeat$vector, levels = c("empty", "small"), labels = c("pEmpty vector", "pYqhI"))

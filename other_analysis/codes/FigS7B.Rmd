@@ -1,0 +1,88 @@
+---
+title: "Fig S7B"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+library(ggbeeswarm)
+library(tidyverse)
+library(ggplot2)
+```
+
+#FigS7B
+```{r}
+cell_volume_phoQ <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/phoQ_cell_volume.csv")
+
+cell_volume_phoQ <- cell_volume_phoQ %>%
+  mutate(length.in.um = length * .11,
+         width.in.um = width * .11) %>%
+  dplyr::select(strain, length.in.um, width.in.um, phase) %>% 
+  mutate(volume.in.um = (pi/4)*(width.in.um^2)*(length.in.um-(length.in.um/3)))
+
+cell_volume_phoQ <- cell_volume_phoQ %>%
+  mutate(Strain_Category = case_when(
+    strain == "Wild_type" ~ "Empty vector",
+    grepl("\\TAA", strain) ~ "proteins with TAA",
+    TRUE ~ "proteins without TAA"
+  ))
+
+cell_volume_phoQ %>% group_by(strain,phase,Strain_Category) %>% tally()
+
+mean_value_phoQ <- cell_volume_phoQ %>%
+  group_by(strain, phase) %>% 
+  summarise(Mean = mean(volume.in.um), .groups = 'drop')
+
+cell_volume_phoQ$strain <- factor(cell_volume_phoQ$strain, levels = c("phoQ", "Wild_type"), labels = c("∆phoQ", "Wild type"))
+
+cell_volume_phoQ$phase <- factor(cell_volume_phoQ$phase, levels = c("lag", "exp"), labels = c("Lag phase", "Exponential phase"))
+
+
+ggplot(cell_volume_phoQ, aes(x = strain, y = volume.in.um, colour=Strain_Category, fill = "white")) +
+  geom_violin(fill="white", position = position_dodge(width = 0.9), adjust = 1) +
+  geom_quasirandom(method='tukeyDense', alpha=0.1) +
+  facet_grid(phase~.)+ 
+  labs(x = NULL, y = expression(log[10]("Cell volume (fL)"))) +
+  scale_y_log10(limits = c(0.2, 30)) +
+  scale_fill_manual(values = "white") +
+  scale_color_manual(values = color_palette_vol) +
+  stat_summary(fun = mean, geom = "crossbar", size = 0.3, width= 0.3, color = "#2c7fb8") +
+  stat_compare_means(ref.group = "Wild type", aes(label = ..p.signif..), 
+                     symnum.args = symnum.args, 
+                     method = "t.test", 
+                     size = 4, 
+                     vjust = 0.5) +  # Adjust size and position of stars
+  theme(text = element_text(size = 16, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+  annotation_logticks(sides = "l") +
+  theme(legend.position = "none") +
+  annotation_logticks(sides = "l") +
+   theme(
+  panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "gray80"),
+  panel.grid.minor = element_line(size = 0.25, linetype = 'solid', colour = "gray90"))
+
+
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/FigS7B.png", width = 4, height =4 , units = "in", dpi = 600) #without the mean value text.
+
+```
+
+

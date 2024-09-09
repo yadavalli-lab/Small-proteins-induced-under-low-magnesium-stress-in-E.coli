@@ -152,6 +152,6 @@ aligned_reads2 %>%
   facet_wrap( ~ sample, ncol = 2, scales = "free", labeller = as_labeller(fac.labels2))
   #theme(legend.position = "bottom")
 
-ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/S1.png", units = "in", dpi = 600, width = 8, height =3)
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS1.png", units = "in", dpi = 600, width = 8, height =3)
 ```
 

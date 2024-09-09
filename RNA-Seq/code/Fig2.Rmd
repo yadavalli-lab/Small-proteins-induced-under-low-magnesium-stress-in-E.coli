@@ -119,7 +119,7 @@ new_diff_exp_tibble %>%
   theme(legend.key.size = unit(1.2, "cm")) +
   theme(legend.spacing = unit(0.25, "cm"))
 
-ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/lowmg_rnaseq_significant score.png", dpi = 600, width = 8, height = 5)
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/Fig2.png", dpi = 600, width = 8, height = 5)
 
 ```
 

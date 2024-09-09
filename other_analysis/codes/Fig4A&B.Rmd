@@ -27,7 +27,7 @@ library(ggplot2)
 ```
 
 ```{r}
-yoai_phosphate <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/yoaI_phosphate2.csv")
+yoai_phosphate <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/yoaI_phosphate2.csv")
 
 yoai_phosphate$strain <- factor(yoai_phosphate$strain, levels = c("pYoaI", "Empty_vector"))
 

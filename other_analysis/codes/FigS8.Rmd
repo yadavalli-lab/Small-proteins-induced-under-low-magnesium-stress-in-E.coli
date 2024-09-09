@@ -1,0 +1,133 @@
+---
+title: "Fig S8"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+library(ggbeeswarm)
+library(tidyverse)
+library(ggplot2)
+```
+
+##FigS8A
+```{r}
+bgal_omrB <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/yoaI_overexpression_omrB.csv")
+bgal_omrB$induced <- factor(bgal_omrB$induced, levels=c("uninduced", "induced"))
+
+bgal_omrB %>%
+filter(induced=="induced") %>%
+    group_by(strain) %>% 
+  mutate(mean.val = mean(`β-galactosidase activity (MU)`), sd.val = sd(`β-galactosidase activity (MU)`), sem.val = sd.val / sqrt(n())) %>%  # Change sem.val to sd.val
+  ungroup() %>% 
+  ggplot(., aes(x = strain, y = `β-galactosidase activity (MU)`)) +
+  geom_dotplot(binaxis = "y", stackdir = "center", binwidth = 20, stackratio = 1,
+               dotsize = 1.7, fill = "lightgrey", color = "black", method="dotdensity") +
+ stat_summary(fun = mean, geom = "crossbar", size = 0.3, width= 0.6, color = "black") +
+  stat_summary(fun.data = mean_se, geom = "text", aes(label = round(..y.., 1)), vjust = -1, color = "black", 
+               position = position_nudge (x = 0.45, y = -0.1)) +
+  labs(x = "Strain",
+       y = "β-galactosidase activity (MU)")+
+  theme(
+    text = element_text(size = 17, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black")) 
+
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/FigS8A.png", width = 3, height = 3, units = "in", dpi = 600)
+
+```
+
+##FigS8B&C 
+```{r}
+envZ_ompFC <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/envZ_ompFC_reporter.csv")
+
+envZ_ompFC  <- envZ_ompFC %>%
+  mutate(strain = str_replace(strain, "empty", "Empty vector")) %>%
+  mutate(strain = str_replace(strain, "yoaI", "YoaI"))
+
+envZ_ompFC$stress <- factor(envZ_ompFC$stress, levels = c("no_mg", "10mM"))
+envZ_ompFC$fluorescence <- factor(envZ_ompFC$fluorescence, levels = c("yfp", "cfp"))
+
+mean_value_cfp<- envZ_ompFC %>%
+  filter(fluorescence=="cfp" & stress=="10mM") %>%
+  group_by(strain, stress) %>%
+  summarise(mean.val=mean(intensity), .groups = 'drop') 
+
+mean_value_yfp<- envZ_ompFC %>%
+  filter(fluorescence=="yfp" & stress=="10mM") %>%
+  group_by(strain, stress) %>%
+  summarise(mean.val=mean(intensity), .groups = 'drop') 
+
+color_yoaI2 <- c("YoaI" = "#de2d26", "Empty vector" = "#636363")
+```
+
+##FigS8B
+```{r}
+envZ_ompFC %>%
+  filter(fluorescence=="cfp" & stress=="10mM") %>%
+ggplot(., aes(x = strain, y = intensity, colour = strain, fill = "white")) +
+geom_violin(fill="white", position = position_dodge(width = 0.9), adjust = 1) +
+  geom_quasirandom(method='tukeyDense', alpha=0.1) +
+  stat_summary(fun = mean, geom = "crossbar", size = 0.3, width= 0.3, color = "#2c7fb8") +
+  labs(x = NULL, y = " PompC transcription CFP(a.u.)") +
+  scale_fill_manual(values = "white") +  # Fill color for all boxes
+  scale_color_manual(values = color_yoaI2) +  # Outline colors
+  stat_compare_means(ref.group = "Empty vector", aes(label = ..p.signif..), symnum.args = symnum.args, method = "t.test") +
+  theme(text = element_text(size = 15, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black")) +
+  annotation_logticks(sides = "l") +
+  theme(legend.position = "none") +
+    theme(
+  panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "gray80"), # Adjust major grid lines
+  panel.grid.minor = element_line(size = 0.25, linetype = 'solid', colour = "gray90")) + 
+  geom_text(data = mean_value_cfp, aes(x = strain, label = round(mean.val, 1)), y = 700, 
+            vjust = 0, hjust = -0.2, color = "#2c7fb8", size = 3.5) 
+
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/FigS8B.png", width = 3, height = 3.2, units = "in", dpi = 600) #without the mean value text
+```
+
+
+##FigS8C
+```{r}
+envZ_ompFC %>%
+  filter(fluorescence=="yfp" & stress=="10mM") %>%
+ggplot(., aes(x = strain, y = intensity, colour = strain, fill = "white")) +
+geom_violin(fill="white", position = position_dodge(width = 0.9), adjust = 1) +
+  geom_quasirandom(method='tukeyDense', alpha=0.1) +
+  stat_summary(fun = mean, geom = "crossbar", size = 0.3, width= 0.3, color = "#2c7fb8") +
+  labs(x = NULL, y = " PompF transcription YFP(a.u.)") +
+  scale_fill_manual(values = "white") +  # Fill color for all boxes
+  scale_color_manual(values = color_yoaI2) +  # Outline colors
+  stat_compare_means(ref.group = "Empty vector", aes(label = ..p.signif..), symnum.args = symnum.args, method = "t.test") +
+  theme(text = element_text(size = 15, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black")) +
+  annotation_logticks(sides = "l") +
+  theme(legend.position = "none") +
+    theme(
+  panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "gray80"), # Adjust major grid lines
+  panel.grid.minor = element_line(size = 0.25, linetype = 'solid', colour = "gray90")) + 
+  geom_text(data = mean_value_yfp, aes(x = strain, label = round(mean.val, 1)), y = 300, 
+            vjust = 0, hjust = -0.2, color = "#2c7fb8", size = 3.5) 
+
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/FigS8C.png", width = 3, height = 3.2, units = "in", dpi = 600) #without the mean value text
+```
+

@@ -29,6 +29,8 @@ library(ggplot2)
 #Fig7
 ```{r fig.width=7.5, fig.height=8.5}
 #I have data for both stress and no stress. I am plotting only the stress. 
+induced <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/growth_overexpression_final.csv")
+induced$strain <- factor(induced$strain,  levels = c("MgtS", "MgrB", "PmrR", "MgtT", "YmiC", "YmiA", "YoaI", "YobF", "YddY", "YriB", "YadX", "YkgS", "YriA", "YdgU", "YqhI", "YadW", "DinQ"))
 
 induced %>%
   filter(time != 0 & stress!="10mM_mg") %>%

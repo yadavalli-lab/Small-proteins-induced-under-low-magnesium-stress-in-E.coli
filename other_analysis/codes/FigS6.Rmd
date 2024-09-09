@@ -30,7 +30,7 @@ library(ggplot2)
 
 ###repeat cell volume may 2024
 ```{r fig.width=10, fig.height=5}
-cell_volume <- read_csv("/data2/sangeev/paper1/updated_June24/dataframe/updated_cell_volume.csv")
+cell_volume <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/updated_cell_volume.csv")
 
 cell_volume <- cell_volume %>%
   mutate(length.in.um = length * .11,

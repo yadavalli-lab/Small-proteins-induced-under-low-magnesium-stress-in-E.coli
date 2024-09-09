@@ -1,0 +1,93 @@
+---
+title: "Fig S9"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and such in the HTML
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+library(tidyverse)
+library(ggplot2)
+```
+
+##FigS9A
+```{r}
+pmrR_lpxT_overexpression <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/pmrR_lpxT_overexpression.csv")
+
+pmrR_lpxT_overexpression$stress <- factor(pmrR_lpxT_overexpression$stress, levels = c("no_stress", "stress"), labels = c("No stress", "Low Mg2+"))
+pmrR_lpxT_overexpression %>%
+   group_by(time, strain, vector, stress) %>% 
+  summarise(mean.val = mean(OD), se.val = sd(OD) / sqrt(n()))  %>%  # Change sem.val to sd.val
+  ungroup() %>% 
+  ggplot(aes(x = time, y = mean.val, color = vector)) +
+  geom_point(size = 0.5) +
+  geom_line() +  
+  geom_errorbar(aes(ymin = mean.val - se.val, ymax = mean.val + se.val),  # Use sd.val for error bars
+                width = 0.4, size = 0.4, position = position_dodge(0.3)) +
+  scale_x_continuous(breaks = seq(0, 20, 2)) +
+  scale_y_continuous(trans = "log2") +
+  scale_color_manual(values = c("#636363", "#de2d26")) +
+  labs(x = "Time (Hours)", y = expression(log[2]("OD"[600])("a.u")),
+       color = NULL) +
+  facet_grid(stress~strain)+
+  theme(text = element_text(size = 13, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+  annotation_logticks(sides = "l")+
+  theme(legend.position = "none")
+
+
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS9A.png", width = 5, height = 3, units = "in", dpi = 600)
+```
+
+##FigS9B
+```{r}
+del_pmrr_lpxt <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/pmrR_lpxT_del.csv")
+
+del_pmrr_lpxt$strain <- factor(del_pmrr_lpxt$strain, levels = (c("MG1655", "ΔpmrR", "ΔlpxT", "ΔpmrRΔlpxT")), labels = c("Wild type", "∆pmrR", "∆lpxT", "ΔpmrRΔlpxT"))
+
+del_pmrr_lpxt %>%
+  filter(stress=="stress")%>%
+   group_by(time, strain, stress) %>%
+  summarise(mean.val = mean(OD), se.val = sd(OD) / sqrt(n())) %>%
+  ungroup() %>% 
+  ggplot(aes(x = time, y = mean.val, color = strain)) +
+  geom_point(size = 0.5) +
+  geom_line() +  
+  geom_errorbar(aes(ymin = mean.val - se.val, ymax = mean.val + se.val),  # Use sd.val for error bars
+                width = 0.4, size = 0.4, position = position_dodge(0.3)) +
+  scale_x_continuous(breaks = seq(0, 20, 2)) +
+  #scale_y_continuous(trans = "log2") +
+  scale_color_manual(values = c("#636363", "#de2d26", "#1c9099", "#8856a7")) +
+  labs(x = "Time (Hours)", y = expression("OD"[600]),
+       color = NULL) +
+  #facet_wrap(~stress)+
+  theme(text = element_text(size = 13, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+  annotation_logticks(sides = "l")+
+  theme(legend.position = "right")
+
+
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS9C.png", width = 4.5, height = 2, units = "in", dpi = 600)
+```
+
+
