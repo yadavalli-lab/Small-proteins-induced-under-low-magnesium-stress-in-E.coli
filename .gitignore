@@ -6,3 +6,7 @@ RNA-Seq/alignment/kallisto/output
 RNA-Seq/30-669514637/*
 RNA-Seq/seqdata/*
 
+.DS_Store
+*/.DS_Store
+.DS_Store
+*/.DS_Store
