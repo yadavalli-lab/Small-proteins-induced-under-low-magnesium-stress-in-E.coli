@@ -1,5 +1,5 @@
 ---
-title: "Fig 4A&B"
+title: "Fig 3A&B"
 output: 
   html_document:
     df_print: paged
@@ -27,14 +27,14 @@ library(ggplot2)
 ```
 
 ```{r}
-yoai_phosphate <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/yoaI_phosphate2.csv")
+yoai_phosphate <- read_csv("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/other_analysis/dataframe/yoaI_phosphate2.csv")
 
 yoai_phosphate$strain <- factor(yoai_phosphate$strain, levels = c("pYoaI", "Empty_vector"))
 
 yoai_phosphate$stress <- factor(yoai_phosphate$stress, levels = c("No_stress", "stress"), labels = c("No stress", "Low phosphate"))
 ```
 
-#Fig 4A
+#Fig 3A
 ```{r}
 yoai_phosphate %>% 
   filter(!mutant=="ΔphoQ") %>%
@@ -59,10 +59,10 @@ yoai_phosphate %>%
         axis.text.x = element_text(angle = 60, hjust = 1))+
    annotation_logticks(sides = "l")
 
-ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig4A.png", width = 5, height = 3, units = "in", dpi = 600)
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig3A.png", width = 5, height = 3, units = "in", dpi = 600)
 ```
 
-#Fig4B
+#Fig3B
 ```{r}
 yoai_phosphate %>% 
   filter(mutant=="ΔphoQ") %>%
@@ -85,6 +85,6 @@ yoai_phosphate %>%
         axis.line = element_line(color = "black"),
         axis.text.x = element_text(angle = 60, hjust = 1)) 
 
-ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig4B.png", width = 3, height = 3, units = "in", dpi = 600)
+ggsave(last_plot(), filename = "~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/figures/Fig3B.png", width = 3, height = 3, units = "in", dpi = 600)
 
 ```

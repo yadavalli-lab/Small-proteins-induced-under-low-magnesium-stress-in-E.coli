@@ -1,5 +1,5 @@
 ---
-title: "Fig3B"
+title: "Fig2C"
 output: 
   html_document:
     df_print: paged
@@ -62,7 +62,7 @@ mgrB <- promoter_reporter %>%
         axis.text.x = element_text(angle = 60, hjust = 1)) +
    theme(legend.position = "none")
         
-ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig3B-mgrB_promoter_reporter.png", width = 3, height = 3, units = "in", dpi = 600)
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig2C-mgrB_promoter_reporter.png", width = 3, height = 3, units = "in", dpi = 600)
 
 plot_others <- promoter_reporter %>%
   filter(protein != "mgrB") %>%
@@ -100,6 +100,6 @@ promoter_reporter %>%
         axis.text.x = element_text(angle = 60, hjust = 1)) +
    theme(legend.position = "none")
 
-ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig3B-other_proteins_promoter_reporter.png", width = 12, height = 12, units = "in", dpi = 600)
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig2C-other_proteins_promoter_reporter.png", width = 12, height = 12, units = "in", dpi = 600)
 ```
 

@@ -1,5 +1,5 @@
 ---
-title: "Fig 5"
+title: "Fig 5A"
 output: 
   html_document:
     df_print: paged
@@ -27,7 +27,7 @@ library(ggplot2)
 ```
 
 ```{r}
-del_updated2 <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/all_strains_repeat_080124.csv")
+del_updated2 <- read_csv("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/other_analysis/dataframe/all_strains_repeat_080124.csv")
 
 del_updated2 <- del_updated2 %>%
   mutate(strain = paste0("∆", strain)) %>% # Add ∆ to the strain column
@@ -47,7 +47,7 @@ del_updated2%>%
   geom_line() + 
   geom_errorbar(aes(ymin = mean.val - sem.val, ymax = mean.val + sem.val), 
                 width = 0.4, size= 0.4, linetype = "solid", position = position_dodge(0.3)) +
-  facet_wrap(~strain, ncol = 4) +
+  facet_wrap(~strain, ncol = 5) +
   scale_x_continuous() +
   scale_y_continuous(trans = "log2", limits = c(0.125, 1.25)) +
   scale_color_manual(values = c("#636363","#de2d26"), 
@@ -61,5 +61,5 @@ del_updated2%>%
   annotation_logticks(sides = "l")+
   theme(legend.position = "bottom")
 
-ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/Fig5.png", dpi = 600, width = 7, height = 7)
+ggsave(plot = last_plot(),filename = "~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/figures/Fig5A.png", dpi = 600, width = 8, height = 7.2)
 ```

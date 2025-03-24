@@ -1,5 +1,5 @@
 ---
-title: "Fig 6"
+title: "Fig 5"
 output: 
   html_document:
     df_print: paged
@@ -26,13 +26,13 @@ library(tidyverse)
 library(ggplot2)
 ```
 
-#Fig6A
+#Fig 5B
 ```{r}
 #upload the data
 del_pmrR_yobF <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/yobF_pmrR.csv")
 ```
 
-#Fig 6A
+#Fig 5B
 ```{r}
 #we wil plot PmrR complementation first
 
@@ -70,10 +70,10 @@ pmrR_comp %>%
   theme(legend.position = "bottom")+
   guides(color = guide_legend(ncol = 1), linetype = guide_legend(ncol = 1, title = NULL)) 
   
-ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig6A.png", width = 4, height = 4, units = "in", dpi = 600)
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig5B.png", width = 4, height = 4, units = "in", dpi = 600)
 ```
 
-#Fig 6B
+#Fig 5C
 ```{r}
 #we wil plot YobF complementation 
 
@@ -111,9 +111,9 @@ yobF_comp %>%
   theme(legend.position = "bottom")+
   guides(color = guide_legend(ncol = 1), linetype = guide_legend(ncol = 1, title = NULL)) 
   
-ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig6B.png", width = 4, height = 4, units = "in", dpi = 600)
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig5C.png", width = 4, height = 4, units = "in", dpi = 600)
 ```
-#Fig6C
+#Fig5D
 ```{r}
 yriAB_del_final <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/yriAB_del_no_comp_repeat.csv")
 
@@ -152,9 +152,9 @@ yriAB_del_final %>%
   guides(color = guide_legend(ncol = 1), linetype = guide_legend(ncol = 1, title = NULL)) 
   
   
-ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig6C.png", width = 4, height = 5, units = "in", dpi = 600)
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig5D.png", width = 4, height = 5, units = "in", dpi = 600)
 ```
-#Fig6D
+#Fig5E
 ```{r}
 yqhI_repeat <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/yqhI_repeat.csv")
 
@@ -188,7 +188,7 @@ yqhI_repeat%>%
   
 
 
-ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig6D.png", width = 3.5, height = 3, units = "in", dpi = 600)
+ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig5E.png", width = 3.5, height = 3, units = "in", dpi = 600)
 
 ```
 

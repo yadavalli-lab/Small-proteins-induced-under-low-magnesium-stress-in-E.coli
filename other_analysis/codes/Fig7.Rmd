@@ -26,37 +26,70 @@ library(tidyverse)
 library(ggplot2)
 ```
 
-#Fig7
-```{r fig.width=7.5, fig.height=8.5}
-#I have data for both stress and no stress. I am plotting only the stress. 
-induced <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/growth_overexpression_final.csv")
-induced$strain <- factor(induced$strain,  levels = c("MgtS", "MgrB", "PmrR", "MgtT", "YmiC", "YmiA", "YoaI", "YobF", "YddY", "YriB", "YadX", "YkgS", "YriA", "YdgU", "YqhI", "YadW", "DinQ"))
+#Fig7A
+```{r fig.width=10, fig.height=5}
 
-induced %>%
-  filter(time != 0 & stress!="10mM_mg") %>%
-  group_by(time, strain, Empty_vector) %>%
-   summarise(mean.val = mean(OD), sem.val = sd(OD) / sqrt(n())) %>% 
-  ungroup() %>%
-  ggplot(aes(x = time, y = mean.val, color = Empty_vector)) +
- geom_point(size =0.5) +
-  geom_line() +
-  geom_errorbar(aes(ymin = mean.val - sem.val, ymax = mean.val + sem.val), 
-                width = 0.4, size = 0.4, linetype = "solid", position = position_dodge(0.3)) +
-  facet_wrap(~strain, ncol = 4) +
-  scale_x_continuous() +
+stop_sproteins <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/overexpression_small_proteins_stop.csv")
+stop_sproteins$protein <- factor(stop_sproteins$protein, levels= c("MgtS", "MgrB",  "PmrR", "YmiA", "YoaI", "YkgS", "DinQ"))
+stop_sproteins$strain <- factor(stop_sproteins$strain, levels= c("pSmall",  "pStop", "pEmpty"),  labels = c("Wild-type/pSmall protein", "Wild-type/pSmall protein (ATG→TAA)", "Wild-type/pEmpty vector"))
+
+stop_sproteins %>% 
+group_by(hour, protein, strain) %>% 
+ summarise(mean.val = mean(OD), se.val = sd(OD) / sqrt(n())) %>%
+  ungroup() %>% 
+  ggplot(aes(x = hour, y = mean.val, color = strain, linetype = strain)) +  # Add linetype aesthetic
+  geom_point(size = 0.5) +
+  geom_line() +  
+  geom_errorbar(aes(ymin = mean.val - se.val, ymax = mean.val + se.val),
+                width = 0.4, size = 0.4,  position = position_dodge(0.3)) +
+  facet_wrap(~ protein, ncol = 4) +
+  scale_x_continuous(breaks = seq(0, 20, 2)) +
   scale_y_continuous(trans = "log2") +
-  scale_color_manual(values = c("#de2d26", "#636363"), 
-                   labels = c("Wild type/pSmall protein", "Wild type/pEmpty vector")) +
-  labs(x = "Time (Hours)", y = expression(log[2]("OD"[600]) * ("a.u.")),
-       color = NULL) +
-  theme(text = element_text(size = 16, family = "Arial"),
+  scale_color_manual(values = c("#de2d26", "black", "#636363")) +
+  scale_linetype_manual(values = c("solid", "dotted", "solid")) +
+  labs(x = "Time (Hours)", y = expression(log[2]("OD"[600])~"(a.u.)"),
+       color = NULL, linetype = NULL) +
+  theme(text = element_text(size = 15, family = "Arial"),
         panel.background = element_blank(),
         axis.line = element_line(color = "black"),
         axis.text.x = element_text(angle = 60, hjust = 1)) +
   annotation_logticks(sides = "l")+
   theme(legend.position = "bottom")
 
-ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/Fig7.png", width = 7.5, height = 8.5, units = "in", dpi = 600)
-```
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/Fig7A.png", width = 9, height = 4, units = "in", dpi = 600)
 ```
 
+#Fig7C
+```{r fig.width=10, fig.height=5}
+phoq_growth_overexpression <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/phoQ_repeat.csv")
+
+#we are only showing for low mg stress
+phoq_growth_overexpression2 <- phoq_growth_overexpression %>% 
+  filter(stress=="no_mg")
+phoq_growth_overexpression2$strain <- factor(phoq_growth_overexpression2$strain, levels= c("MgtS", "MgrB",  "PmrR", "YmiA", "YoaI", "YkgS", "DinQ"))
+
+phoq_growth_overexpression2 %>%
+  group_by(time, strain, Empty_vector) %>%
+  summarise(mean.val = mean(OD), se.val = sd(OD) / sqrt(n())) %>%
+  ungroup() %>%
+  ggplot(aes(x = time, y = mean.val, color = Empty_vector)) +
+ geom_point(size = 0.5) +
+  geom_line() +
+  geom_errorbar(aes(ymin = mean.val - se.val, ymax = mean.val + se.val), 
+                width = 0.4, size = 0.4, position = position_dodge(0.3)) +
+  scale_x_continuous(breaks = seq(0, 20, 2)) +
+  scale_y_continuous(trans = "log2") +
+  scale_color_manual(values = c("#de2d26", "#636363"), 
+                     labels = c("∆phoQ/psmall protein", "∆phoQ/pEmpty vector")) +
+ labs(x = "Time (Hours)", y = expression(log[2]("OD"[600])~"(a.u.)"),
+       color = NULL, linetype = NULL) +
+  facet_wrap(~strain, ncol = 4) +
+ theme(text = element_text(size = 15, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+        axis.text.x = element_text(angle = 60, hjust = 1)) +
+  annotation_logticks(sides = "l")+
+  theme(legend.position = "bottom")
+
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/Fig7C.png", width = 8, height = 4, units = "in", dpi = 600)
+```

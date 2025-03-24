@@ -24,72 +24,221 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", ev
 ```{r}
 library(tidyverse)
 library(ggplot2)
+library(ggpubr)
 ```
 
 #Fig8A
-```{r fig.width=10, fig.height=5}
+```{r}
+bgal_yoaI_envZ <- read_csv("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/other_analysis/dataframe/bgal_yoaI_envZ.csv")
 
-stop_sproteins <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/overexpression_small_proteins_stop.csv")
-stop_sproteins$protein <- factor(stop_sproteins$protein, levels= c("MgtS", "MgrB",  "PmrR", "YmiA", "YoaI", "YkgS", "DinQ"))
-stop_sproteins$strain <- factor(stop_sproteins$strain, levels= c("pSmall",  "pStop", "pEmpty"),  labels = c("Wild-type/pSmall protein", "Wild-type/pSmall protein (ATG→TAA)", "Wild-type/pEmpty vector"))
+bgal_yoaI_envZ$strain <- factor(bgal_yoaI_envZ$strain, levels = c("pUT18C-YoaI/pKT25", "pUT18C-MgrB/pKT25-PhoQ",  "pUT18C-YoaI/pKT25-PhoQ", "pUT18C-YoaI/pKT25-PhoR", "pUT18C-YoaI/pKT25-EnvZ"))
 
-stop_sproteins %>% 
-group_by(hour, protein, strain) %>% 
- summarise(mean.val = mean(OD), se.val = sd(OD) / sqrt(n())) %>%
+symnum.args <- list(cutpoints = c(0, 0.0001, 0.001, 0.01, 0.05, 1),
+                    symbols = c("****", "***", "**", "*", "ns"))
+
+comparison2 <- list(
+    c("pUT18C-MgrB/pKT25-PhoQ", "pUT18C-YoaI/pKT25"),
+    c("pUT18C-MgrB/pKT25-PhoQ", "pUT18C-YoaI/pKT25-PhoQ"),
+    c("pUT18C-MgrB/pKT25-PhoQ", "pUT18C-YoaI/pKT25-PhoR"),
+    c("pUT18C-MgrB/pKT25-PhoQ", "pUT18C-YoaI/pKT25-EnvZ")
+)
+
+
+bgal_yoaI_envZ %>%
+    group_by(strain) %>% 
+  mutate(mean.val = mean(`β-galactosidase activity (MU)`), sd.val = sd(`β-galactosidase activity (MU)`), sem.val = sd.val / sqrt(n())) %>%  # Change sem.val to sd.val
   ungroup() %>% 
-  ggplot(aes(x = hour, y = mean.val, color = strain, linetype = strain)) +  # Add linetype aesthetic
-  geom_point(size = 0.5) +
-  geom_line() +  
-  geom_errorbar(aes(ymin = mean.val - se.val, ymax = mean.val + se.val),
-                width = 0.4, size = 0.4,  position = position_dodge(0.3)) +
-  facet_wrap(~ protein, ncol = 4) +
-  scale_x_continuous(breaks = seq(0, 20, 2)) +
-  scale_y_continuous(trans = "log2") +
-  scale_color_manual(values = c("#de2d26", "black", "#636363")) +
-  scale_linetype_manual(values = c("solid", "dotted", "solid")) +
-  labs(x = "Time (Hours)", y = expression(log[2]("OD"[600])~"(a.u.)"),
-       color = NULL, linetype = NULL) +
+  ggplot(., aes(x = strain, y = `β-galactosidase activity (MU)`)) +
+  geom_dotplot(binaxis = "y", stackdir = "center", binwidth = 23, stackratio = 1,
+               dotsize = 2.8, fill = "lightgrey", color = "black", method="dotdensity") +
+ stat_summary(fun = mean, geom = "crossbar", size = 0.3, width= 0.6, color = "black") +
+    stat_compare_means(comparisons = comparison2, 
+                   aes(label = ..p.signif..), 
+                   method = "t.test", 
+                   symnum.args = symnum.args, 
+                   step.increase = 0.08,
+                   vjust = 0.1)+
+  labs(x = "Strain",
+       y = "β-galactosidase activity (MU)")+
+  theme(
+    text = element_text(size = 16, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"), 
+    axis.text.x = element_text(angle = 20, hjust = 1)) 
+ggsave(last_plot(), filename = "~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/figures/Fig8A.png", width = 3.8, height = 4, units = "in", dpi = 600)
+```
+
+#Fig8B-top panel
+```{r}
+library(ggbeeswarm)
+
+#stationary phase omrB reporter under mg stress
+omrB_yoaI_mg <- read_csv("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/other_analysis/dataframe/PomrB_mg.csv")
+
+
+omrB_yoaI_mg$stress <- factor(omrB_yoaI_mg$stress, levels = c("No_stress", "low_Mg"))
+
+omrB_yoaI_mg$strain <- factor(omrB_yoaI_mg$strain, levels = c("wild_type", "∆yoaI", "∆yoaI∆envZ"))
+
+mean_value_mg<- omrB_yoaI_mg %>%
+  group_by(strain, stress) %>%
+  summarise(mean.val=mean(fluorescence), .groups = 'drop') 
+
+color_yoaI_mcherry <- c("∆yoaI" = "#de2d26", "wild_type" = "#636363", "∆yoaI∆envZ" = "#c994c7")
+
+omrB_yoaI_mg %>% group_by(strain, stress) %>% tally()
+
+omrB_yoaI_mg %>%
+group_by(strain, stress) %>%
+ggplot(., aes(x = strain, y = fluorescence, colour = strain, fill = "white")) +
+geom_violin(fill="white", position = "identity", adjust = 1, scale = "width") +
+  geom_quasirandom(method='tukeyDense', alpha=0.1) +
+  stat_summary(fun = mean, geom = "crossbar", size = 0.3, width= 0.3, color = "#2c7fb8") +
+  labs(x = NULL, y = "PomrB (mcherry (a.u.)") +
+  scale_fill_manual(values = "white") +  # Fill color for all boxes
+  scale_color_manual(values = color_yoaI_mcherry) +  # Outline colors
+  stat_compare_means(comparisons = comparisons, 
+                   aes(label = ..p.signif..), 
+                   method = "t.test", 
+                   symnum.args = symnum.args, 
+                   step.increase = 0.05,
+                   vjust = 0.5)+
   theme(text = element_text(size = 15, family = "Arial"),
         panel.background = element_blank(),
-        axis.line = element_line(color = "black"),
-        axis.text.x = element_text(angle = 60, hjust = 1)) +
-  annotation_logticks(sides = "l")+
-  theme(legend.position = "bottom")
+        axis.line = element_line(color = "black")) +
+  facet_wrap(~stress) +
+  theme(legend.position = "none") +
+    theme(
+  panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "gray80"), # Adjust major grid lines
+  panel.grid.minor = element_line(size = 0.25, linetype = 'solid', colour = "gray90"))+  
+  geom_text(data = mean_value_mg, aes(x = strain, label = round(mean.val, 1)), y = 500, 
+            vjust = 0, hjust = -0.2, color = "#2c7fb8", size = 3.5) 
 
-ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/Fig8A.png", width = 9, height = 4, units = "in", dpi = 600)
+
+ggsave(last_plot(), filename = "~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/figures/Fig8B_top_panel.png", width = 5.3, height = 3.2, units = "in", dpi = 600) 
 ```
 
-#Fig8C
-```{r fig.width=10, fig.height=5}
-phoq_growth_overexpression <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/phoQ_repeat.csv")
+#Figure 8B-bottom panel
+```{r}
+#stationary phase omrB reporter under phosphate stress
+omrB_yoaI_phos <- read_csv("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/other_analysis/dataframe/PomrB_phos.csv")
 
-#we are only showing for low mg stress
-phoq_growth_overexpression2 <- phoq_growth_overexpression %>% 
-  filter(stress=="no_mg")
-phoq_growth_overexpression2$strain <- factor(phoq_growth_overexpression2$strain, levels= c("MgtS", "MgrB",  "PmrR", "YmiA", "YoaI", "YkgS", "DinQ"))
 
-phoq_growth_overexpression2 %>%
-  group_by(time, strain, Empty_vector) %>%
-  summarise(mean.val = mean(OD), se.val = sd(OD) / sqrt(n())) %>%
-  ungroup() %>%
-  ggplot(aes(x = time, y = mean.val, color = Empty_vector)) +
- geom_point(size = 0.5) +
-  geom_line() +
-  geom_errorbar(aes(ymin = mean.val - se.val, ymax = mean.val + se.val), 
-                width = 0.4, size = 0.4, position = position_dodge(0.3)) +
-  scale_x_continuous(breaks = seq(0, 20, 2)) +
-  scale_y_continuous(trans = "log2") +
-  scale_color_manual(values = c("#de2d26", "#636363"), 
-                     labels = c("∆phoQ/psmall protein", "∆phoQ/pEmpty vector")) +
- labs(x = "Time (Hours)", y = expression(log[2]("OD"[600])~"(a.u.)"),
-       color = NULL, linetype = NULL) +
-  facet_wrap(~strain, ncol = 4) +
- theme(text = element_text(size = 15, family = "Arial"),
+omrB_yoaI_phos$stress <- factor(omrB_yoaI_phos$stress, levels = c("No_stress", "low_phos"))
+
+omrB_yoaI_phos$strain <- factor(omrB_yoaI_phos$strain, levels = c("wild_type", "∆yoaI", "∆yoaI∆envZ"))
+
+mean_value_phos<- omrB_yoaI_phos %>%
+  group_by(strain, stress) %>%
+  summarise(mean.val=mean(fluorescence), .groups = 'drop') 
+
+omrB_yoaI_phos %>% group_by(strain, stress) %>% tally()
+
+omrB_yoaI_phos %>%
+group_by(strain, stress) %>%
+ggplot(., aes(x = strain, y = fluorescence, colour = strain, fill = "white")) +
+geom_violin(fill="white", position = position_dodge(width = 0.9), adjust = 1, scale = "width") +
+  geom_quasirandom(method='tukeyDense', alpha=0.1) +
+  stat_summary(fun = mean, geom = "crossbar", size = 0.3, width= 0.3, color = "#2c7fb8") +
+  labs(x = NULL, y = "PomrB (mcherry (a.u.)") +
+  scale_fill_manual(values = "white") +  # Fill color for all boxes
+  scale_color_manual(values = color_yoaI_mcherry) +  # Outline colors
+  stat_compare_means(comparisons = comparisons, 
+                   aes(label = ..p.signif..), 
+                   method = "t.test", 
+                   symnum.args = symnum.args, 
+                   step.increase = 0.05,
+                   vjust = 0.5)+
+  theme(text = element_text(size = 15, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black")) +
+  facet_wrap(~stress) +
+  theme(legend.position = "none") +
+    theme(
+  panel.grid.major = element_line(size = 0.5, linetype = 'solid', colour = "gray80"), # Adjust major grid lines
+  panel.grid.minor = element_line(size = 0.25, linetype = 'solid', colour = "gray90"))+  
+  geom_text(data = mean_value_phos, aes(x = strain, label = round(mean.val, 1)), y = 500, 
+            vjust = 0, hjust = -0.2, color = "#2c7fb8", size = 3.5) 
+
+ggsave(last_plot(), filename = "~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/figures/Fig8B_bottom_panel.png", width = 5.3, height = 3.2, units = "in", dpi = 600) #without the mean value text
+```
+
+#Fig 8C
+```{r}
+bgal_yoaI_mut <- read.csv("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/other_analysis/dataframe/yoaI_oe_bgal.csv")
+
+bgal_yoaI_mut
+
+bgal_yoaI_mut$strain <- factor(bgal_yoaI_mut$strain, levels = c("pEmpty", "pYoaI", "∆envZ_pEmpty", "∆envZ_pYoaI", "pYoaI_E31A", "pYoaI_E31Q", "pYoaI_G34A"))
+
+comparison3 <- list(
+    c("pEmpty", "pYoaI"),
+        c("pEmpty", "∆envZ_pEmpty"),
+        c("pYoaI", "∆envZ_pYoaI"),
+        c("pYoaI", "pYoaI_E31A"),
+        c("pYoaI", "pYoaI_E31Q")
+)
+  
+
+bgal_yoaI_mut %>%
+  filter(strain!="pYoaI_G34A") %>%
+group_by(strain) %>% 
+  mutate(mean.val = mean(Bgal), sd.val = sd(Bgal), sem.val = sd.val / sqrt(n())) %>%  # Change sem.val to sd.val
+  ungroup() %>% 
+  ggplot(., aes(x = strain, y = Bgal)) +
+  geom_dotplot(binaxis = "y", stackdir = "center", binwidth = 20, stackratio = 0.75,
+               dotsize = 2, fill = "lightgrey", color = "black", method="dotdensity") +
+ stat_summary(fun = mean, geom = "crossbar", size = 0.4, width= 0.6, color = "black") +
+  stat_compare_means(comparisons = comparison3, 
+                   aes(label = ..p.signif..), 
+                   method = "t.test", 
+                   symnum.args = symnum.args, 
+                   step.increase = 0.07,
+                   vjust = 0.5)+
+  labs(x = "Strain",
+       y = "β-galactosidase activity (MU)")+
+  theme(
+    text = element_text(size = 16, family = "Arial"),
         panel.background = element_blank(),
         axis.line = element_line(color = "black"),
-        axis.text.x = element_text(angle = 60, hjust = 1)) +
-  annotation_logticks(sides = "l")+
-  theme(legend.position = "bottom")
-
-ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/Fig8C.png", width = 8, height = 4, units = "in", dpi = 600)
+    axis.text.x = element_text(angle = 20, hjust = 1)) 
+ggsave(last_plot(), filename = "~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/figures/Fig8C.png", width = 4.5, height = 4.5, units = "in", dpi = 600)
 ```
+
+#Fig 8D
+```{r}
+bgal_yoaI_interaction <- read.csv("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/other_analysis/dataframe/mutants_BATCH.csv")
+
+bgal_yoaI_interaction$strain <- factor(bgal_yoaI_interaction$strain, levels = c("pYoaI-pKT25", "pYoaI-pEnvZ", "pYoaI-E31A- pEnvZ", "pYoaI-E31Q- pEnvZ", "pYoaI-G34A- pEnvZ", "pYoaI-pEnvZ-W176A", "pYoaI-pEnvZ-R180A"))
+
+comparison4 <- list(
+    c("pYoaI-pKT25", "pYoaI-pEnvZ"),
+        c("pYoaI-pEnvZ", "pYoaI-E31A- pEnvZ"),
+        c("pYoaI-pEnvZ", "pYoaI-E31Q- pEnvZ")
+)
+  
+bgal_yoaI_interaction %>%
+  filter(strain %in% c("pYoaI-pEnvZ", "pYoaI-pKT25","pYoaI-E31A- pEnvZ", "pYoaI-E31Q- pEnvZ")) %>%
+group_by(strain) %>% 
+  mutate(mean.val = mean(Bgal), sd.val = sd(Bgal), sem.val = sd.val / sqrt(n())) %>%  # Change sem.val to sd.val
+  ungroup() %>% 
+  ggplot(., aes(x = strain, y = Bgal)) +
+  geom_dotplot(binaxis = "y", stackdir = "center", binwidth = 28, stackratio = 1,
+               dotsize = 2, fill = "lightgrey", color = "black", method="dotdensity") +
+ stat_summary(fun = mean, geom = "crossbar", size = 0.4, width= 0.6, color = "black") +
+  stat_compare_means(comparisons = comparison4, 
+                   aes(label = ..p.signif..), 
+                   method = "t.test", 
+                   symnum.args = symnum.args, 
+                   step.increase = 0.07,
+                   vjust = 0.5)+
+  labs(x = "Strain",
+       y = "β-galactosidase activity (MU)")+
+  theme(
+    text = element_text(size = 15, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"),
+    axis.text.x = element_text(angle = 20, hjust = 1)) 
+ggsave(last_plot(), filename = "~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/figures/Fig8D.png", width = 3.3, height = 4, units = "in", dpi = 600)
+```
+

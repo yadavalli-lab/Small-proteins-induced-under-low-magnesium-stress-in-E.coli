@@ -1,5 +1,5 @@
 ---
-title: "Fig S4"
+title: "Fig 1D"
 output: 
   html_document:
     df_print: paged
@@ -93,7 +93,7 @@ function(reads.table, gene, pad, intern = 30){
 ```{r}
 plot_gene(tally_reads, gene = gff %>% filter(gene == "yoaI"), pad = 0, intern = 100)
 
-ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS4A.png", dpi = 600, width = 4, height = 3)
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/Fig1D.png", dpi = 600, width = 4, height = 3)
 
 ```
 
