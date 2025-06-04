@@ -1,6 +1,6 @@
 # Small-proteins-induced-under-low-magnesium-stress
 
-This repository contains the code and associated files for the study titled "Translational profiling of stress-induced small proteins uncovers a connection among distinct signaling systems," currently available on _bioRxiv_ ([link to paper](https://www.biorxiv.org/content/10.1101/2024.09.13.612970v4)).
+This repository contains the code and associated files for the study titled "Translation profiling of stress-induced small proteins reveals a novel link among signaling systems", currently available on _bioRxiv_ ([link to paper](https://www.biorxiv.org/content/10.1101/2024.09.13.612970v4)).
 
 ## Repository Organization
 
