@@ -1,0 +1,60 @@
+---
+title: "Fig S8C"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
+
+```{r}
+# Load libraries
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(ggpubr)
+```
+
+
+```{r}
+data3 <- data.frame(
+  Variant = c("YoaI", "YoaI_E31A", "YoaI_E31Q"),
+  rep1 = c(100, 99, 110),
+  rep2 = c(66, 70, 80),
+  rep3 = c(77, 77, 90)
+)
+
+t.test(c(100,66,77), c(99,70,77), paired = TRUE)
+t.test(c(100,66,77), c(77,77,90), paired = TRUE)
+
+# Reshape to long format
+long_data3 <- data3 %>%
+  pivot_longer(cols = starts_with("rep"), names_to = "Replicate", values_to = "Intensity")
+
+# Set factor level order for consistent x-axis
+long_data3$Variant <- factor(long_data3$Variant, levels = c("YoaI", "YoaI_E31A", "YoaI_E31Q"))
+
+# Compute mean ± SEM
+summary_data3 <- long_data3 %>%
+  group_by(Variant) %>%
+  summarise(
+    Mean = mean(Intensity),
+    SEM = sd(Intensity) / sqrt(n()),
+    .groups = "drop"
+  )
+
+# Plot
+ggplot(summary_data3, aes(x = Variant, y = Mean)) +
+  geom_bar(stat = "identity", fill = "grey", color = "black", width = 0.6) +
+  geom_errorbar(aes(ymin = Mean - SEM, ymax = Mean + SEM), width = 0.2) +
+  labs(
+   x = "Variant",
+    y = "YoaI-His (a.u.)"
+  ) +
+  theme(
+    text = element_text(size = 20, family = "Arial"),
+        panel.background = element_blank(),
+        axis.line = element_line(color = "black"))
+
+ggsave(last_plot(), filename = "~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/figures//FigS8C.png", width = 4.5, height = 3.5, units = "in", dpi = 600)
+```

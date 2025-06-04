@@ -1,5 +1,5 @@
 ---
-title: "Fig S8"
+title: "Fig S6"
 output: 
   html_document:
     df_print: paged
@@ -26,9 +26,9 @@ library(tidyverse)
 library(ggplot2)
 ```
 
-##FigS8A
+##FigS6A
 ```{r}
-pmrR_lpxT_overexpression <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/pmrR_lpxT_overexpression.csv")
+pmrR_lpxT_overexpression <- read_csv("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/other_analysis/dataframe/pmrR_lpxT_overexpression.csv")
 
 pmrR_lpxT_overexpression$stress <- factor(pmrR_lpxT_overexpression$stress, levels = c("no_stress", "stress"), labels = c("No stress", "Low Mg2+"))
 pmrR_lpxT_overexpression %>%
@@ -54,12 +54,12 @@ pmrR_lpxT_overexpression %>%
   theme(legend.position = "none")
 
 
-ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS8A.png", width = 5, height = 3, units = "in", dpi = 600)
+ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS6A.png", width = 5, height = 3, units = "in", dpi = 600)
 ```
 
-##FigS8B
+##FigS6B
 ```{r}
-del_pmrr_lpxt <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/pmrR_lpxT_del.csv")
+del_pmrr_lpxt <- read_csv("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/other_analysis/dataframe/pmrR_lpxT_del.csv")
 
 del_pmrr_lpxt$strain <- factor(del_pmrr_lpxt$strain, levels = (c("MG1655", "ΔpmrR", "ΔlpxT", "ΔpmrRΔlpxT")), labels = c("Wild type", "∆pmrR", "∆lpxT", "ΔpmrRΔlpxT"))
 
@@ -87,7 +87,7 @@ del_pmrr_lpxt %>%
   theme(legend.position = "right")
 
 
-ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/FigS8C.png", width = 4.5, height = 2, units = "in", dpi = 600)
+ggsave(plot = last_plot(),filename = "~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/figures/FigS6B.png", width = 4.5, height = 2, units = "in", dpi = 600)
 ```
 
 

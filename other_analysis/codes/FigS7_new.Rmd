@@ -1,5 +1,5 @@
 ---
-title: "Fig S6"
+title: "Fig S7_new"
 output: 
   html_document:
     df_print: paged
@@ -27,7 +27,7 @@ library(tidyverse)
 library(ggplot2)
 ```
 
-##FigS6A&B 
+##FigS7A&B 
 ```{r}
 envZ_ompFC <- read_csv("/data2/sangeev/paper1/updated_June24/other_analysis/dataframe/envZ_ompFC_reporter.csv")
 
@@ -51,7 +51,7 @@ mean_value_yfp<- envZ_ompFC %>%
 color_yoaI2 <- c("YoaI" = "#de2d26", "Empty vector" = "#636363")
 ```
 
-##FigS6A
+##FigS7A
 ```{r}
 envZ_ompFC %>%
   filter(fluorescence=="cfp" & stress=="10mM") %>%
@@ -78,7 +78,7 @@ ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/Fig
 ```
 
 
-##FigS6B
+##FigS7B
 ```{r}
 envZ_ompFC %>%
   filter(fluorescence=="yfp" & stress=="10mM") %>%
@@ -104,7 +104,7 @@ geom_violin(fill="white", position = position_dodge(width = 0.9), adjust = 1) +
 ggsave(last_plot(), filename = "/data2/sangeev/paper1/updated_June24/figures/FigS6B.png", width = 3, height = 3.2, units = "in", dpi = 600) #without the mean value text
 ```
 
-#Fig S6C
+#Fig S7C
 ```{r fig.width=10, fig.height=5}
 
 envZ_growth <- read_csv("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/other_analysis/dataframe/YoaI_overexpression_envZ.csv")

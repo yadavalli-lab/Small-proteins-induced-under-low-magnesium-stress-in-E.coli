@@ -1,0 +1,85 @@
+---
+title: "Fig S8D"
+output: 
+  html_document:
+    df_print: paged
+author: "Sangeev"
+date: "`r Sys.time()`"
+---
+
+<style type="text/css">
+.main-container {
+  max-width: 1500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+
+```{r}
+# Prevent printing of warnings and messages in the final HTML output (useful for clean reports)
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, fig.align = "center", eval = FALSE)
+```
+
+# Load packages
+```{r}
+# Load necessary libraries for data manipulation and plotting
+
+library(tidyverse)  # Loads a collection of R packages for data science (includes dplyr, ggplot2, readr, etc.)
+library(ggplot2)  # Specifically used for data visualization
+```
+
+#FigS8D
+```{r}
+# Read the CSV file containing OD600 (optical density) measurements for different YoaI mutants
+
+yoaI_mut_growth <- read_csv("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/other_analysis/dataframe/YoaI_overexpression_mutants.csv") #this is my path, you will need to update your path accordingly. 
+
+yoaI_mut_growth$vector <- factor(yoaI_mut_growth$vector, levels = c("pYoaI", "pYoaI_E31A", "pYoaI_E31Q", "pEmpty"))  #Reorder the levels of the 'vector' factor to control how they appear in the plot legend and facets
+
+
+# Begin data manipulation and visualization
+yoaI_mut_growth %>%
+  group_by(hour, vector) %>%                        # Group data by time (hour) and plasmid/vector type
+  summarise(
+    mean.val = mean(OD),                            # Calculate the mean optical density (growth) for each group
+    se.val = sd(OD) / sqrt(n())                     # Calculate the standard error of the mean, I have 4 replicates so SE works, if you have less, use SD instead
+  ) %>%
+  ungroup() %>%                                     # Remove the grouping to allow for plotting
+  ggplot(aes(x = hour, y = mean.val, color = vector)) +  # Start a ggplot with time on x-axis and mean OD on y-axis, colored by vector type
+  geom_point(size = 1) +                            # Add individual points to show data at each time point
+  geom_line() +                                     # Add lines connecting points for each group
+  geom_errorbar(
+    aes(ymin = mean.val - se.val, ymax = mean.val + se.val),  # Add error bars showing standard error
+    width = 0.4, 
+    size = 0.4, 
+    position = position_dodge(0.3)
+  ) +
+  scale_x_continuous(breaks = seq(1, 20, 2)) +       # Set x-axis to show breaks every 2 hours from 1 to 20
+  scale_y_continuous(trans = "log2") +               # Use a log2 scale for the y-axis (growth measurements)
+  scale_color_manual(
+    values = c("#de2d26", "#31a354", "#3182bd", "#636363"),   # Define custom colors for each vector type, check for more colors from colorbrewer2, remember this order is based on how to ordered the vectors previously
+    labels = c("pYoaI_E31A", "pYoaI_E31Q", "pEmpty")          # Define what labels should appear in the legend
+  ) +
+  labs(
+    x = "Time (Hours)", 
+    y = expression(log[2]("OD"[600])),              # Use expression to format y-axis label as log₂(OD600)
+    color = NULL                                    # Remove legend title
+  ) +
+  theme(
+    text = element_text(size = 17, family = "Arial"),            # Use Arial font, size 17
+    panel.background = element_blank(),                          # Remove grey background for a clean look
+    axis.line = element_line(color = "black"),                   # Make axes black lines
+    axis.text.x = element_text(angle = 60, hjust = 1)            # Tilt x-axis text for better readability
+  ) +
+  annotation_logticks(sides = "l") +                # Add log tick marks on the left side of the y-axis
+  theme(legend.position = "none")                   # Hide the legend (I like to edit the legends manually)
+
+
+# Save the final plot to a file
+ggsave(
+  plot = last_plot(),                               # Save the most recent plot generated
+  filename = "~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/figures/FigS8D.png", 
+  width = 3, height = 2.2, units = "in", dpi = 600  # Specify dimensions in inches and resolution (600 dpi for publication quality)
+)
+
+```
