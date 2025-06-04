@@ -31,16 +31,17 @@ library(GenomicAlignments)
 library(parallel)
 library(RiboRet)
 library(ggpubr)
+library(rtracklayer)
 ```
 
 ```{r}
 #load the data
-tally_reads <- read_csv("/data2/sangeev/paper1/updated_June24/Ribo-RET/dataframe/tally_reads_offset0.csv")
+tally_reads <- read_csv("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/Ribo-RET/dataframe/tally_reads_offset0.csv")
 ```
 
 ```{r}
 #load gff
-gff <- readGFF("/data2/sangeev/paper1/updated_June24/Ribo-RET/gffs/GCF_000005845.2_ASM584v2_genomic.gff.gz")
+gff <- readGFF("~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/Ribo-RET/gffs/GCF_000005845.2_ASM584v2_genomic.gff.gz")
 gff <- gff %>% 
   as_tibble() %>%
   filter(type == "CDS") %>%
@@ -89,11 +90,11 @@ function(reads.table, gene, pad, intern = 30){
 #these colors are color-blind, print, and photocopy friendly. 
 ```
 
-#Figure S4A
+#Figure 1D
 ```{r}
-plot_gene(tally_reads, gene = gff %>% filter(gene == "yoaI"), pad = 0, intern = 100)
+plot_gene(tally_reads, gene = gff %>% filter(gene == "yoaI"), pad = 30, intern = 130)
 
-ggsave(plot = last_plot(),filename = "/data2/sangeev/paper1/updated_June24/figures/Fig1D.png", dpi = 600, width = 4, height = 3)
+ggsave(plot = last_plot(),filename = "~/Library/CloudStorage/Box-Box/github/Small-proteins-induced-under-low-magnesium-stress-in-E.coli/figures/Fig1D.png", dpi = 600, width = 4, height = 3)
 
 ```
 
